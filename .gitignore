@@ -1,0 +1,7 @@
+*pyc
+*~
+*.swp
+
+dist/
+build/
+crnsimulator.egg-info/
