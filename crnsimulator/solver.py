@@ -70,16 +70,18 @@ def writeODElib(odename, odedict, rdict, svars = None, template = None) :
 
   return odefile
 
-def ode_plotter(name, t, ny, var, log=True):
+def ode_plotter(name, t, ny, svars, log=True):
   fig, ax = plt.subplots(1, 1, figsize=(7, 3.25))
 
   for e, y in enumerate(ny) :
-    ax.plot(t, y, '-', label=var[e])
+    ax.plot(t, y, '-', label=svars[e])
 
   ax.set_xlabel('Time [s]', fontsize=16)
   ax.set_ylabel('Conc. [M]', fontsize=16)
   if log :
     ax.set_xscale('log')
+  else :
+    ax.set_xscale('linear')
 
   plt.legend()
   fig.tight_layout()
@@ -95,7 +97,7 @@ def get_crnsimulator_args(parser):
 
   parser.add_argument("--p0", nargs='+', default=['1=1'],
       help="Initial species concentration.")
-  parser.add_argument("--t0", type=float, default=1e-6,
+  parser.add_argument("--t0", type=float, default=0.1,
       help="First time point of the printed time-course")
   parser.add_argument("--ti", type=float, default=1.02,
       help="Output-time increment of solver (t1 * ti = t2)")
@@ -146,7 +148,7 @@ def main():
 
   ### => SOLVER
   odename = 'oscillator'
-  if writeODElib(odename, ode, rdict, svars=svars) :
+  if writeODElib(odename, odict, rdict, svars=svars) :
     _temp = __import__(odename, globals(), locals(), [], -1)
     odesystem = getattr(_temp, odename)
 
@@ -158,7 +160,7 @@ def main():
     for i in zip(time, *ny):
       print ' '.join(map("{:.9e}".format, i))
 
-  ode_plotter(odename, time, ny, var, log=True)
+  ode_plotter(odename, time, ny, svars, log=False)
   
 if __name__ == '__main__':
   main()

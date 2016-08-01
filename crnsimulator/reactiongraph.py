@@ -7,7 +7,7 @@ def crn_to_ode(crn, rate_dict = True, symplification = True):
 
   crn = sorted(map(lambda x: [sorted(x[0]), sorted(x[1]), x[2]], crn))
   crn2 = sorted(map(lambda x: [sorted(x[0]), sorted(x[1]), x[2]], crn2))
-  assert crn1 == crn2
+  assert crn == crn2
 
   for dx in ode.keys():
     sfunc = sympify(' + '.join(['*'.join(map(str,xp)) for xp in ode[dx]]))
