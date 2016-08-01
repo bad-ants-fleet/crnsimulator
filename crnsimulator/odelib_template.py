@@ -11,6 +11,7 @@
 import argparse
 import numpy as np
 from scipy.integrate import odeint
+from crnsimulator.solver import add_integrator_args, ode_plotter
 
 rates = {
 #<&>RATES<&>#
@@ -18,29 +19,14 @@ rates = {
 
 #<&>ODECALL<&>#
 
-def sim_args():
-  """Simulation Aruments """
+#<&>JACOBIAN<&>#
+
+def integrate():
   parser = argparse.ArgumentParser(
           formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
-  parser.add_argument("--name", default="#<&>ODENAME<&>#",
-      help="Import a CRN directly from crnsimulator.sample_crns")
-  parser.add_argument("--nxy", action='store_true',
-      help="Print time course in nxy format.")
-
-  parser.add_argument("--p0", nargs='+', #default=['1=1'],
-      help="Initial species concentration.")
-  parser.add_argument("--t0", type=float, default=1e-6,
-      help="First time point of the printed time-course")
-  parser.add_argument("--ti", type=float, default=1.02,
-      help="Output-time increment of solver (t1 * ti = t2)")
-  parser.add_argument("--t8", type=float, default=10000,
-      help="Simulation time after transcription")
-  return parser.parse_args()
-
-def integrate():
-  args = sim_args()
-
+  add_integrator_args(parser)
+  args = parser.parse_args()
   #<&>SORTEDVARS<&>#
 
   if not args.p0 :
@@ -55,14 +41,24 @@ def integrate():
       p0[int(p)-1] = float(o)
   print '# Initial concentrations:', zip(svars,p0)
 
-  time = np.linspace(0, 1000, 1000)
+  if False :
+    time = [0, args.t0]
+    while time[-1] < args.t8 :
+      time.append(time[-1]*args.ti)
+  else :
+    time = np.linspace(args.t0, args.t8, args.t8)
+
   ny = odeint(#<&>ODENAME<&>#, 
-      p0, time, (None, )).T
+      p0, time, (None, ), #<&>JCALL<&>#,
+      atol=args.atol, rtol=args.rtol, mxstep=args.mxstep).T
 
   if args.nxy :
     for i in zip(time, *ny):
       print ' '.join(map("{:.9e}".format, i))
 
+  if not args.noplot :
+    ode_plotter(args.name, time, ny, svars, log=False)
+  
 if __name__ == '__main__':
   integrate()
 

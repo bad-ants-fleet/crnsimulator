@@ -22,8 +22,8 @@ ODE system in form of a python script. `ozzy.pdf` is a plot of the simulation.
 >>> crn  = [[['A', 'B'],['B','B'],0.2],
             [['B', 'C'],['C','C'],0.8],
             [['C', 'A'],['A','A'],0.9]]
->>> odict, rdict = crn_to_ode(crn)
->>> olib = writeODElib(name, odict, rdict)
+>>> svars, odes, jacobi, rdict = crn_to_ode(crn)
+>>> olib = writeODElib(name, svars, odes, jacobi, rdict)
 >>> print 'ODE system file:', olib
 ```
 

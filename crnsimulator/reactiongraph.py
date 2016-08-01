@@ -1,7 +1,7 @@
 import networkx as nx
-from sympy import sympify
+import sympy
 
-def crn_to_ode(crn, rate_dict = True, symplification = True):
+def crn_to_ode(crn, rate_dict = True, symplification = True, sorted_vars = False):
   """A wrapper function for CRN_to_MultiDigraph() and MultiDigraph_to_ODE(). """
   crn2, ode, rdict = MultiDiGraph_to_ODE(CRN_to_MultiDiGraph(crn), rate_dict = rate_dict)
 
@@ -9,14 +9,29 @@ def crn_to_ode(crn, rate_dict = True, symplification = True):
   crn2 = sorted(map(lambda x: [sorted(x[0]), sorted(x[1]), x[2]], crn2))
   assert crn == crn2
 
-  for dx in ode.keys():
-    sfunc = sympify(' + '.join(['*'.join(map(str,xp)) for xp in ode[dx]]))
+  if sorted_vars :
+    assert len(sorted_vars) == len(ode.keys())
+  else :
+    sorted_vars = sorted(ode.keys())
+
+  M = []
+  for dx in sorted_vars :
+    sfunc = sympy.sympify(' + '.join(['*'.join(map(str,xp)) for xp in ode[dx]]))
     ode[dx] = sfunc
+    M.append(sfunc)
+
+  M = sympy.Matrix(M)
+  try : 
+    J = M.jacobian(sorted_vars)
+  except ValueError, e :
+    print 'Failed to write jacobian! :-/. That may be a bug!'
+    print 'ERROR:', e
+    J = None
 
   if rate_dict :
-    return ode, rdict
+    return sorted_vars, M, J, rdict
   else :
-    return ode
+    return sorted_vars, M, J
 
 def CRN_to_MultiDiGraph(crn):
   """ """

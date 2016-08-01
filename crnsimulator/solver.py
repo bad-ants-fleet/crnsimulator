@@ -17,16 +17,12 @@ sns.set_context("notebook", font_scale=1, rc={"lines.linewidth": 2.5})
 from crnsimulator.sample_crns import oscillator, bin_counter
 from crnsimulator.reactiongraph import crn_to_ode
 
-def writeODElib(odename, odedict, rdict, svars = None, template = None) :
+def writeODElib(odename, svars, odeM, jacobian=None, rdict=None, 
+    template = None) :
   """ Write a python script that contains the ODE system.
   
 
   """
-  if svars :
-    assert len(svars) == len(odedict.keys())
-  else :
-    svars = sorted(odedict.keys())
-
   if not template :
     import crnsimulator.odelib_template
     template = crnsimulator.odelib_template.__file__[:-1]
@@ -53,11 +49,39 @@ def writeODElib(odename, odedict, rdict, svars = None, template = None) :
   functionstring += "\n"
   ## Write the ODEs
   for i in range(len(svars)):
-    functionstring += "  d{}dt = {}\n".format(svars[i], odedict[svars[i]]) 
+    functionstring += "  d{}dt = {}\n".format(svars[i], odeM[i]) 
   ## return
   functionstring += "  return np.array([{}])".format(
       ', '.join(map(lambda x: 'd'+x+'dt', sorted(svars))))
   odetemp = odetemp.replace("#<&>ODECALL<&>#",functionstring)
+
+  if jacobian:
+    # JACOBIAN FUNCTION
+    jacobianstring = "def {}(p0, t0, r):\n".format('jacobian')
+    ## Initialize arguments
+    jacobianstring += "  {} = p0\n".format(', '.join(sorted(svars)))
+    jacobianstring += "  if not r : r = rates\n\n"
+    for k in sorted(rdict.keys()):
+      jacobianstring += "  {} = r['{}']\n".format(k, k) 
+    jacobianstring += "\n"
+
+    ## Write the jacobian
+    jacobianstring += "  J = [[[] for i in range(len(p0))] " + \
+        "for j in range(len(p0))]\n"
+
+    vl = len(svars)
+    i,j = 0,0
+    for row in jacobian:
+      jacobianstring += "  J[{}][{}] = {}\n".format(i, j, row)
+      if j < vl-1 :
+        j += 1
+      else :
+        i += 1
+        j = 0
+    ## return
+    jacobianstring += "  return J"
+    odetemp = odetemp.replace("#<&>JACOBIAN<&>#",jacobianstring)
+    odetemp = odetemp.replace("#<&>JCALL<&>#",'Dfun = jacobian')
 
   # SORTED VARIABLE NAMES in integrate()
   svarstring = 'svars = ' + '[{}]'.format(
@@ -87,30 +111,50 @@ def ode_plotter(name, t, ny, svars, log=True):
   fig.tight_layout()
   plt.savefig(name+'.pdf')
 
-def get_crnsimulator_args(parser):
-  """ A collection of arguments that are used by crnsimulator """
+def add_integrator_args(parser):
+  """Simulation Aruments """
+  # scipy.integrate.odeint parameters
+  parser.add_argument("-a", "--atol", type=float, default=None,
+      help="Specify absolute tolerance for the solver.")
+  parser.add_argument("-r", "--rtol", type=float, default=None,
+      help="Specify relative tolerance for the solver.")
+  parser.add_argument("--mxstep", type=int, default=0,
+      help="Maximum number of steps allowed for each integration point in t.")
 
-  parser.add_argument("--sample", default='oscillator',
-      help="Import a CRN directly from crnsimulator.sample_crns")
+  # crn parameters
+  parser.add_argument("--p0", nargs='+', #default=['1=1'],
+      help="Initial species concentration.")
+  parser.add_argument("--rates", default=None,
+      help="*not implemented*, using default for now!")
+
+  # simulation time
+  parser.add_argument("--t0", type=float, default=0.1,
+      help="First time point of the printed time-course.")
+  parser.add_argument("--ti", type=float, default=1.02,
+      help="Output-time increment of solver (t1 * ti = t2).")
+  parser.add_argument("--t8", type=float, default=1000,
+      help="Simulation time.")
+
+  # output format
+  parser.add_argument("--name", default='crn_simulation',
+      help="Name the plot outputfile.")
+  parser.add_argument("--noplot", action='store_true',
+      help="Do *not* plot the simulation using matplotlib.")
   parser.add_argument("--nxy", action='store_true',
       help="Print time course in nxy format.")
-
-  parser.add_argument("--p0", nargs='+', default=['1=1'],
-      help="Initial species concentration.")
-  parser.add_argument("--t0", type=float, default=0.1,
-      help="First time point of the printed time-course")
-  parser.add_argument("--ti", type=float, default=1.02,
-      help="Output-time increment of solver (t1 * ti = t2)")
-  parser.add_argument("--t8", type=float, default=10000,
-      help="Simulation time after transcription")
-  return parser
+  #parser.add_argument("--verbose", action='store_true',
+  #    help="Print more information.")
+  return
 
 def main():
   """ On-the-fly simulation of a CRN. """
   parser = argparse.ArgumentParser(
           formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
-  parser = get_crnsimulator_args(parser)
+  parser.add_argument("--sample", default='oscillator',
+      help="Import a CRN directly from crnsimulator.sample_crns")
+
+  add_integrator_args(parser)
 
   args = parser.parse_args()
 
@@ -129,10 +173,13 @@ def main():
   else :
     time = np.linspace(args.t0, args.t8, args.t8)
 
-  ### => REACTIONGRAPH
-  odict, rdict = crn_to_ode(crn, rate_dict = True, symplification = True)
+  if args.name == 'crn_simulation' and args.sample:
+    odename = args.sample
+  else :
+    odename = args.name
 
-  svars = sorted(odict.keys())
+  ### => REACTIONGRAPH
+  svars, M, J, R = crn_to_ode(crn)
 
   if not args.p0 :
     for e, v in enumerate(svars, 1) :
@@ -147,20 +194,22 @@ def main():
   print '# Initial concentrations:', zip(svars,p0)
 
   ### => SOLVER
-  odename = 'oscillator'
-  if writeODElib(odename, odict, rdict, svars=svars) :
+  if writeODElib(odename, svars, M, J, R) :
     _temp = __import__(odename, globals(), locals(), [], -1)
     odesystem = getattr(_temp, odename)
+    jacobian = getattr(_temp, 'jacobian')
 
     # Set/Adjust Parameters
     rates = None # default rates from file
-    ny = odeint(odesystem, p0, time, (rates, )).T
+    ny = odeint(odesystem, p0, time, (rates, ), 
+        Dfun=jacobian, rtol=args.rtol, atol=args.atol, mxstep=args.mxstep).T
 
   if args.nxy :
     for i in zip(time, *ny):
       print ' '.join(map("{:.9e}".format, i))
 
-  ode_plotter(odename, time, ny, svars, log=False)
+  if not args.noplot :
+    ode_plotter(odename, time, ny, svars, log=False)
   
 if __name__ == '__main__':
   main()
