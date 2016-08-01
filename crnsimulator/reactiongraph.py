@@ -1,8 +1,22 @@
 import networkx as nx
+from sympy import sympify
 
-def crn_to_ode(crn, rate_dict = True):
+def crn_to_ode(crn, rate_dict = True, symplification = True):
   """A wrapper function for CRN_to_MultiDigraph() and MultiDigraph_to_ODE(). """
-  return MultiDiGraph_to_ODE(CRN_to_MultiDiGraph(crn), rate_dict = rate_dict)
+  crn2, ode, rdict = MultiDiGraph_to_ODE(CRN_to_MultiDiGraph(crn), rate_dict = rate_dict)
+
+  crn = sorted(map(lambda x: [sorted(x[0]), sorted(x[1]), x[2]], crn))
+  crn2 = sorted(map(lambda x: [sorted(x[0]), sorted(x[1]), x[2]], crn2))
+  assert crn1 == crn2
+
+  for dx in ode.keys():
+    sfunc = sympify(' + '.join(['*'.join(map(str,xp)) for xp in ode[dx]]))
+    ode[dx] = sfunc
+
+  if rate_dict :
+    return ode, rdict
+  else :
+    return ode
 
 def CRN_to_MultiDiGraph(crn):
   """ """
