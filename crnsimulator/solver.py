@@ -4,23 +4,23 @@
 
 # from __future__ import division, absolute_import, print_function, unicode_literals
 
+import imp # import from source on-the-fly
 import argparse
 import numpy as np
 from scipy.integrate import odeint
 from sympy import lambdify, sympify
 
 import matplotlib.pyplot as plt
-import seaborn as sns
-sns.set()
-sns.set_context("notebook", font_scale=1, rc={"lines.linewidth": 2.5})
+# import seaborn as sns
+# sns.set()
+# sns.set_context("notebook", font_scale=1, rc={"lines.linewidth": 2.5})
 
 from crnsimulator.sample_crns import oscillator, bin_counter
 from crnsimulator.reactiongraph import crn_to_ode
 
-def writeODElib(odename, svars, odeM, jacobian=None, rdict=None, 
-    template = None) :
+def writeODElib(svars, odeM, odename='odesystem', jacobian=None, rdict=None, 
+    concvect = [], template = None) :
   """ Write a python script that contains the ODE system.
-  
 
   """
   if not template :
@@ -42,7 +42,7 @@ def writeODElib(odename, svars, odeM, jacobian=None, rdict=None,
   # ODEINT FUNCTION
   functionstring =  "def {}(p0, t0, r):\n".format(odename)
   ## Initialize arguments
-  functionstring += "  {} = p0\n".format(', '.join(sorted(svars)))
+  functionstring += "  {} = p0\n".format(', '.join(svars))
   functionstring += "  if not r : r = rates\n\n"
   for k in sorted(rdict.keys()):
     functionstring += "  {} = r['{}']\n".format(k, k) 
@@ -52,14 +52,14 @@ def writeODElib(odename, svars, odeM, jacobian=None, rdict=None,
     functionstring += "  d{}dt = {}\n".format(svars[i], odeM[i]) 
   ## return
   functionstring += "  return np.array([{}])".format(
-      ', '.join(map(lambda x: 'd'+x+'dt', sorted(svars))))
+      ', '.join(map(lambda x: 'd'+x+'dt', svars)))
   odetemp = odetemp.replace("#<&>ODECALL<&>#",functionstring)
 
   if jacobian:
     # JACOBIAN FUNCTION
     jacobianstring = "def {}(p0, t0, r):\n".format('jacobian')
     ## Initialize arguments
-    jacobianstring += "  {} = p0\n".format(', '.join(sorted(svars)))
+    jacobianstring += "  {} = p0\n".format(', '.join(svars))
     jacobianstring += "  if not r : r = rates\n\n"
     for k in sorted(rdict.keys()):
       jacobianstring += "  {} = r['{}']\n".format(k, k) 
@@ -85,8 +85,16 @@ def writeODElib(odename, svars, odeM, jacobian=None, rdict=None,
 
   # SORTED VARIABLE NAMES in integrate()
   svarstring = 'svars = ' + '[{}]'.format(
-      ', '.join(map(lambda x: str('"'+x+'"'), sorted(svars))))
+      ', '.join(map(lambda x: str('"'+x+'"'), svars)))
   odetemp = odetemp.replace("#<&>SORTEDVARS<&>#",svarstring)
+
+  # Default concentrations in integrate()
+  concstring = ''
+  #print "\n  ".join([map("p0[{}] = {}".format, enumerate(concvect))])
+  for e, c in enumerate(concvect) :
+    if c :
+      concstring += "p0[{}] = {}\n  ".format(e,c)
+  odetemp = odetemp.replace("#<&>DEFAULTCONCENTRATIONS<&>#",concstring)
 
   odefile = odename + '.py'
   with open(odefile,'w') as ofile :
@@ -109,7 +117,8 @@ def ode_plotter(name, t, ny, svars, log=True):
 
   plt.legend()
   fig.tight_layout()
-  plt.savefig(name+'.pdf')
+  plt.savefig(name)
+  return name
 
 def add_integrator_args(parser):
   """Simulation Aruments """
@@ -166,6 +175,7 @@ def main():
   else :
     raise Exception('Cannot find the sample CRN:', args.sample)
 
+  #TODO(SB): CMD options?
   if False :
     time = [0, args.t0]
     while time[-1] < args.t8 :
@@ -185,7 +195,7 @@ def main():
     for e, v in enumerate(svars, 1) :
       print e, v
     raise SystemExit('please specify the initial concentration vector' + \
-        'with --p0, e.g.: --p0 1=1 --p0 2=0.005 3=1e-6')
+        'with --p0, e.g.: --p0 1=1 2=0.005 3=1e-5')
   else :
     p0 = [0] * len(svars)
     for term in args.p0 :
@@ -194,22 +204,28 @@ def main():
   print '# Initial concentrations:', zip(svars,p0)
 
   ### => SOLVER
-  if writeODElib(odename, svars, M, J, R) :
-    _temp = __import__(odename, globals(), locals(), [], -1)
-    odesystem = getattr(_temp, odename)
-    jacobian = getattr(_temp, 'jacobian')
+  odefile =  writeODElib(svars, M, odename=odename, jacobian=J, rdict=R)
+  print '# Wrote ODE system:', odefile
+  _temp = imp.load_source(odename, "./"+odefile)
 
-    # Set/Adjust Parameters
-    rates = None # default rates from file
-    ny = odeint(odesystem, p0, time, (rates, ), 
-        Dfun=jacobian, rtol=args.rtol, atol=args.atol, mxstep=args.mxstep).T
+  odesystem = getattr(_temp, odename)
+  if J :
+    jacobian = getattr(_temp, 'jacobian')
+  else :
+    jacobian = None
+
+  # Set/Adjust Parameters
+  rates = None
+  ny = odeint(odesystem, p0, time, (rates, ), 
+      Dfun=jacobian, rtol=args.rtol, atol=args.atol, mxstep=args.mxstep).T
 
   if args.nxy :
     for i in zip(time, *ny):
       print ' '.join(map("{:.9e}".format, i))
 
   if not args.noplot :
-    ode_plotter(odename, time, ny, svars, log=False)
+    plotfile = ode_plotter(odename+'.pdf', time, ny, svars, log=False)
+    print '# Printed file:', plotfile
   
 if __name__ == '__main__':
   main()

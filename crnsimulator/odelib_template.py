@@ -29,17 +29,25 @@ def integrate():
   args = parser.parse_args()
   #<&>SORTEDVARS<&>#
 
+  p0 = [0] * len(svars)
+  #<&>DEFAULTCONCENTRATIONS<&>#
+  # like:
+  # p0[28] =  30 * 1e-9
+  # ...
+  # p0[39] = 300 * 1e-9
+  # add option --default
+
   if not args.p0 :
+    print '# Simulationg with default concentrations:'
     for e, v in enumerate(svars, 1) :
-      print e, v
-    raise SystemExit('please specify the initial concentration vector' + \
-        'with --p0, e.g.: --p0 1=1 --p0 2=0.005 3=1e-6')
+      print '#', e, v
+    print '# You may specify alternative initial concentrations ' + \
+        'with --p0, e.g.: --p0 1=0.1 2=0.005 3=1e-6'
   else :
-    p0 = [0] * len(svars)
     for term in args.p0 :
       p,o = term.split('=')
       p0[int(p)-1] = float(o)
-  print '# Initial concentrations:', zip(svars,p0)
+    print '# Initial concentrations:', zip(svars,p0)
 
   if False :
     time = [0, args.t0]

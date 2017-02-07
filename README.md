@@ -1,6 +1,6 @@
 # crnsimulator
 
-The CRNsimulator translates a chemical recation network (CRN) into a set of
+The `crnsimulator` translates a chemical recation network (CRN) into a set of
 ordinary differential equations, (ODEs), writes these equations into a new
 Python library file and then integrates the ODE system.
 
@@ -23,8 +23,9 @@ ODE system in form of a python script. `ozzy.pdf` is a plot of the simulation.
             [['B', 'C'],['C','C'],0.8],
             [['C', 'A'],['A','A'],0.9]]
 >>> svars, odes, jacobi, rdict = crn_to_ode(crn)
->>> olib = writeODElib(name, svars, odes, jacobi, rdict)
->>> print 'ODE system file:', olib
+>>> olib = writeODElib(svars, odes, odename=name, jacobian=jacobi, rdict=rdict)
+>>> print 'ODE system file:', olib  
+ODE system file: ozzy.py
 ```
 
 The ODE-system-file can be directly executed, e.g. with:
