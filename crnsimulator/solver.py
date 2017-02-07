@@ -18,8 +18,8 @@ import matplotlib.pyplot as plt
 from crnsimulator.sample_crns import oscillator, bin_counter
 from crnsimulator.reactiongraph import crn_to_ode
 
-def writeODElib(svars, odeM, odename='odesystem', jacobian=None, rdict=None, 
-    concvect = [], template = None) :
+def writeODElib(svars, odeM, jacobian=None, rdict=None, 
+    odename = 'odesystem', path = './', concvect = [], template = None) :
   """ Write a python script that contains the ODE system.
 
   """
@@ -96,7 +96,7 @@ def writeODElib(svars, odeM, odename='odesystem', jacobian=None, rdict=None,
       concstring += "p0[{}] = {}\n  ".format(e,c)
   odetemp = odetemp.replace("#<&>DEFAULTCONCENTRATIONS<&>#",concstring)
 
-  odefile = odename + '.py'
+  odefile = path + '/' + odename + '.py'
   with open(odefile,'w') as ofile :
     ofile.write(odetemp)
 
