@@ -1,7 +1,7 @@
 import networkx as nx
 import sympy
 
-def crn_to_ode(crn, rate_dict = True, sorted_vars = False):
+def crn_to_ode(crn, rate_dict = True, sorted_vars = False, jacobian = True):
   """A wrapper function for CRN_to_MultiDiGraph() and MultiDiGraph_to_ODE(). """
   crn2, ode, rdict = MultiDiGraph_to_ODE(
       CRN_to_MultiDiGraph(crn), rate_dict = rate_dict)
@@ -23,20 +23,17 @@ def crn_to_ode(crn, rate_dict = True, sorted_vars = False):
 
   M = sympy.Matrix(M)
 
-  #TODO test jacobian output  and where it breaks!
-  try : 
-    J = M.jacobian(sorted_vars)
-  except ValueError, e :
-    print 'Failed to write jacobian! :-/. This may be a bug!'
-    print 'ERROR:', e
+  if jacobian :
+    # NOTE: they sympy version breaks ragularly:
+    # J = M.jacobian(sorted_vars)
+    # ... so it is done per pedes:
+    J = []
+    for f in M :
+      for x in sorted_vars:
+        J.append(f.diff(x))
+    J = sympy.Matrix(J)
+  else :
     J=None
-  #TODO: ok this is confusing, seems like M.jacobian fails on some input, but
-  # then we can just do it manually?
-  #  J = []
-  #  for f in M :
-  #    for x in sorted_vars:
-  #      J.append(f.diff(x))
-  #  J = sympy.Matrix(J)
 
   if rate_dict :
     return sorted_vars, M, J, rdict
@@ -48,7 +45,7 @@ def CRN_to_MultiDiGraph(crn):
   RG = nx.MultiDiGraph()
   num = 0
   for reaction in crn :
-    hyper= 'REACT:' + str(num)
+    hyper = 'REACT:' + str(num)
     rate = reaction[2]
     for reac in reaction[0]:
       RG.add_weighted_edges_from([(reac, hyper, rate)])

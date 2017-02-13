@@ -1,6 +1,74 @@
 #!/usr/bin/env python
 
+import imp
+import argparse
+from crnsimulator import writeODElib, crn_to_ode
+
+from crnsimulator.sample_crns import oscillator, bin_counter
+from crnsimulator.odelib_template import add_integrator_args
+
+def main(args):
+  """Translate a CRN into a system of ODEs. Optional: Simulate ODEs on-the-fly. """
+
+  # *********************** #
+  # ARGUMENT PROCESSING 1/2 #
+  # ....................... #
+
+  odefile = './' + args.output + '.py'
+
+  if args.sample == 'oscillator':
+    crn = oscillator()
+  elif args.sample == 'binary_counter':
+    crn = binary_counter()
+  else :
+    raise Exception('Cannot find the sample CRN:', args.sample)
+
+  # **************** #
+  # WRITE ODE SYSTEM #
+  # ................ #
+
+  if not args.force and os.path.exists(odefile):
+    print Warning('# Reading ODE system from existing file:', odefile)
+  else :
+    # ******************* #
+    # BUILD REACTIONGRAPH #
+    # ................... #
+    V, M, J, R = crn_to_ode(crn, jacobian = False if args.no_jacobian else True)
+
+    # ********************* #
+    # PRINT ODE TO TEMPLATE #
+    # ..................... #
+    odefile2 =  writeODElib(V, M, jacobian=J, rdict=R, odename=args.output) 
+    #print '# TODO:', odefile, 'vs', odefile2
+    print '# Wrote ODE system:', odefile
+
+  if args.t8 :
+    print '# Simulating the ODE system from file:', odefile
+
+    _temp = imp.load_source(args.output, odefile)
+    integrate = getattr(_temp, 'integrate')
+    integrate(args)
+
+  else :
+    print '# Specify --t8 to simulate the ODE system.'
+
+
 if __name__ == '__main__':
-  import crnsimulator
-  crnsimulator.main()
+  parser = argparse.ArgumentParser(
+          formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+
+  parser.add_argument("--sample", default='oscillator',
+      help="Import a CRN directly from crnsimulator.sample_crns")
+  parser.add_argument("--force", action='store_true',
+      help="Overwrite existing files")
+  parser.add_argument("-o", "--output", default='odesystem', metavar='<str>',
+      help="Name of ODE library files.")
+  parser.add_argument("--no-jacobian", action='store_true',
+      help="Do not compute the Jacobi-Matrix.")
+
+  add_integrator_args(parser)
+
+  args = parser.parse_args()
+
+  main(args)
 

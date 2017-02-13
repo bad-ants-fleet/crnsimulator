@@ -10,8 +10,46 @@
 
 import argparse
 import numpy as np
+import matplotlib.pyplot as plt
 from scipy.integrate import odeint
-from crnsimulator.solver import add_integrator_args, ode_plotter
+
+# Uncomment this section for seaborn plot-style
+import seaborn as sns
+sns.set()
+sns.set_context("notebook", font_scale=1, rc={"lines.linewidth": 2.0})
+
+def ode_plotter(name, t, ny, svars, log=False):
+  """ Plots the ODE trajectories.
+
+  Args:
+    name <str>: Name of the outputfile (supports *.pdf and *.png)
+    t <list[flt]> : time units plotted on the x-axis.
+    ny <list[list[flt]]> : a list of trajectories plotted on the y-axis.
+    svars <list[str]>: A list of names for every trajectory in ny
+    log <optional:<bool>>: Plot data on a logarithmic time scale
+
+  Prints:
+    A file containing the plot (Format *.pdf or *.png)
+
+  Returns:
+    name <str>: Name of the file containing the plot
+  """
+  fig, ax = plt.subplots(1, 1, figsize=(7, 3.25))
+
+  for e, y in enumerate(ny) :
+    ax.plot(t, y, '-', label=svars[e])
+
+  ax.set_xlabel('Time [s]', fontsize=16)
+  ax.set_ylabel('Conc. [M]', fontsize=16)
+  if log :
+    ax.set_xscale('log')
+  else :
+    ax.set_xscale('linear')
+
+  plt.legend()
+  fig.tight_layout()
+  plt.savefig(name)
+  return name
 
 rates = {
 #<&>RATES<&>#
@@ -21,52 +59,127 @@ rates = {
 
 #<&>JACOBIAN<&>#
 
-def integrate():
-  parser = argparse.ArgumentParser(
-          formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+def add_integrator_args(parser):
+  """Standard Simulation Aruments."""
 
-  add_integrator_args(parser)
-  args = parser.parse_args()
+  # required: simulation time and output settings
+  parser.add_argument("--t0", type=float, default=0, metavar='<flt>',
+      help="First time point of the time-course.")
+  parser.add_argument("--t8", type=float, default=None, metavar='<flt>',
+      help="End point of simulation time.")
+  parser.add_argument("--t-lin", type=int, default=None, metavar='<int>',
+      help="Returns --t-lin evenly spaced numbers on a linear scale from --t0 to --t8.")
+  parser.add_argument("--t-log", type=int, default=None, metavar='<int>',
+      help="Returns --t-log evenly spaced numbers on a logarithmic scale from --t0 to --t8.")
+
+  # required: initial concentration vector
+  parser.add_argument("--p0", nargs='+', metavar='<int>=<flt>', #default=['1=1'],
+      help="Vector of initial species concentrations. E.g. \"--p0 1=0.5 3=0.7\" stands" + \
+          " for species number 1 at a concentration of 0.5 and species number 3 at" + \
+          " a concentration of 0.7")
+
+  # optional: choose output formats
+  parser.add_argument("--nxy", action='store_true',
+      help="Print time course in nxy format.")
+  parser.add_argument("--pyplot", default='', metavar='<str>',
+      help="Specify a filename to plot the ODE simulation.")
+
+  # advanced: scipy.integrate.odeint parameters
+  parser.add_argument("-a", "--atol", type=float, default=None, metavar='<flt>',
+      help="Specify absolute tolerance for the solver.")
+  parser.add_argument("-r", "--rtol", type=float, default=None, metavar='<flt>',
+      help="Specify relative tolerance for the solver.")
+  parser.add_argument("--mxstep", type=int, default=0, metavar='<int>',
+      help="Maximum number of steps allowed for each integration point in t.")
+
+  #parser.add_argument("--rates", default=None,
+  #    help="*not implemented*, using default for now!")
+  return
+
+def integrate(args):
+  """Main interface to solve the ODE-system.
+
+  Args:
+    args <argparse()>: An argparse object containing all of the arguments as specified above
+      (crnsimulator.add_integrator_args)
+
+  Prints:
+    * Verbose information
+    * plot files
+    * time-course
+      
+  Returns:
+    Nothing
+
+  """
+
+  #p0 = args.p0
+  #t8 = args.t8
+  #t_inc = args.t_inc
+  #t_log = args.t_log
+  #t_lin = args.t_lin
+  #atol = args.atol
+  #rtol = args.rtol
+  #mxstep = args.mxstep
+
+  #nxy = args.nxy
+  #log = args.logfile # print verbose info to file.
+  #plotfile = args.pyplot # test.pdf, test.png, etc.
+
   #<&>SORTEDVARS<&>#
 
   p0 = [0] * len(svars)
   #<&>DEFAULTCONCENTRATIONS<&>#
-  # like:
-  # p0[28] =  30 * 1e-9
-  # ...
-  # p0[39] = 300 * 1e-9
-  # add option --default
+
+  if not args.t8 :
+    raise ValueError('Specify the end-time for the simulation: --t8 <flt>')
+
+  if args.t_log :
+    if args.t0 == 0 :
+      raise ValueError('--t0 cannot be 0 when using log-scale!')
+    time = np.logspace(np.log10(args.t0), np.log10(args.t8), num=args.t_log)
+  elif args.t_lin :
+    time = np.linspace(args.t0, args.t8, num=args.t_lin)
+  else :
+    raise ValueError('Please specify either --t-lin or --t-log. (see --help)')
 
   if not args.p0 :
-    print '# Simulationg with default concentrations:'
-    for e, v in enumerate(svars, 1) :
-      print '#', e, v
-    print '# You may specify alternative initial concentrations ' + \
-        'with --p0, e.g.: --p0 1=0.1 2=0.005 3=1e-6'
+    print '# Initial concentrations:', zip(svars,p0)
+    if sum(p0) == 0 :
+      for e, v in enumerate(svars, 1) :
+        print '#', e, v
+      raise ValueError('# Must specify a vector of initial concentrations: ' + \
+          'e.g. --p0 1=0.1 2=0.005 3=1e-6 (see --help)')
   else :
     for term in args.p0 :
       p,o = term.split('=')
       p0[int(p)-1] = float(o)
     print '# Initial concentrations:', zip(svars,p0)
 
-  if False :
-    time = [0, args.t0]
-    while time[-1] < args.t8 :
-      time.append(time[-1]*args.ti)
-  else :
-    time = np.linspace(args.t0, args.t8, args.t8)
+  # TODO: It would be nice if it is possible to read alternative rates from a file instead.
+  # None triggers the default-rates that are hardcoded in the (this) library file.
+  rates = None
 
   ny = odeint(#<&>ODENAME<&>#, 
-      p0, time, (None, ), #<&>JCALL<&>#,
+      p0, time, (rates, ), #<&>JCALL<&>#,
       atol=args.atol, rtol=args.rtol, mxstep=args.mxstep).T
 
   if args.nxy :
     for i in zip(time, *ny):
       print ' '.join(map("{:.9e}".format, i))
 
-  if not args.noplot :
-    ode_plotter(args.name, time, ny, svars, log=False)
+  if args.pyplot :
+    plotfile = ode_plotter(args.pyplot, time, ny, svars, log=True if args.t_log else False)
+    #plotfile = ode_plotter(args.pyplot, time, ny, svars, log=False)
+    print '# Printed file:', plotfile
   
 if __name__ == '__main__':
-  integrate()
+  parser = argparse.ArgumentParser(
+      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+
+  add_integrator_args(parser)
+
+  args = parser.parse_args()
+
+  integrate(args)
 
