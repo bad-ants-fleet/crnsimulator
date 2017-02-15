@@ -40,7 +40,7 @@ def ode_plotter(name, t, ny, svars, log=False):
     ax.plot(t, y, '-', label=svars[e])
 
   ax.set_xlabel('Time [s]', fontsize=16)
-  ax.set_ylabel('Conc. [M]', fontsize=16)
+  ax.set_ylabel('Concentration [M]', fontsize=16)
   if log :
     ax.set_xscale('log')
   else :
@@ -61,6 +61,9 @@ rates = {
 
 def add_integrator_args(parser):
   """Standard Simulation Aruments."""
+
+  parser.add_argument("--list", action='store_true',
+      help="Print all species and exit.")
 
   # required: simulation time and output settings
   parser.add_argument("--t0", type=float, default=0, metavar='<flt>',
@@ -130,6 +133,12 @@ def integrate(args):
 
   p0 = [0] * len(svars)
   #<&>DEFAULTCONCENTRATIONS<&>#
+
+  if args.list :
+    for e, v in enumerate(svars, 1) :
+      print '#', e, v
+    raise SystemExit('# Specify a vector of initial concentrations: ' + \
+          'e.g. --p0 1=0.1 2=0.005 3=1e-6 (see --help)')
 
   if not args.t8 :
     raise ValueError('Specify the end-time for the simulation: --t8 <flt>')

@@ -24,7 +24,7 @@ def crn_to_ode(crn, rate_dict = True, sorted_vars = False, jacobian = True):
   M = sympy.Matrix(M)
 
   if jacobian :
-    # NOTE: they sympy version breaks ragularly:
+    # NOTE: The sympy version breaks regularly:
     # J = M.jacobian(sorted_vars)
     # ... so it is done per pedes:
     J = []
@@ -55,7 +55,9 @@ def CRN_to_MultiDiGraph(crn):
     num += 1
   return RG
 
-def MultiDiGraph_to_ODE(RG, rate_dict = False):
+def MultiDiGraph_to_ODE(RG, rate_dict = False, 
+    reactf = lambda r : r[:6] == 'REACT:', 
+    ratef = lambda x,y : x.node[y]['rate']):
   """ Translate a networkx MultiDiGraph into a ODE system.
   
   For every reaction vertex, append the respective species to a dictionary of
@@ -79,13 +81,12 @@ def MultiDiGraph_to_ODE(RG, rate_dict = False):
   crn = []
   ode = {}
   for r in RG.nodes_iter() :
-    if r[:6] != 'REACT:' : continue
+    if not reactf(r) : continue
     if rate_dict :
       rate = 'k'+str(len(rdict.keys()))
-      rdict[rate] = RG.node[r]['rate']
-      #rate = 'r['+rate+']'
+      rdict[rate] = ratef(RG,r)
     else :
-      rate = str(RG.node[r]['rate'])
+      rate = str(ratef(RG,r))
 
     reactants = []
     for reac in RG.predecessors_iter(r) :
@@ -110,7 +111,7 @@ def MultiDiGraph_to_ODE(RG, rate_dict = False):
       else :
         ode[x]= [[rate] + reactants]
 
-    crn.append([reactants, products, RG.node[r]['rate']])
+    crn.append([reactants, products, ratef(RG,r)])
   return crn, ode, rdict
 
 def DiGraph_to_ODE(CG, rate_dict = False):

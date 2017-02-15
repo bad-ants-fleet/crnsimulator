@@ -86,7 +86,7 @@ def writeODElib(svars, odeM, jacobian=None, rdict=None,
       concstring += "p0[{}] = {}\n  ".format(e,c)
   odetemp = odetemp.replace("#<&>DEFAULTCONCENTRATIONS<&>#",concstring)
 
-  odefile = path + '/' + odename + '.py'
+  odefile = path + '/' if path[-1] != '/' else '' + odename + '.py'
   with open(odefile,'w') as ofile :
     ofile.write(odetemp)
 

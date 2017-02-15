@@ -2,10 +2,10 @@
 
 import imp
 import argparse
-from crnsimulator import writeODElib, crn_to_ode
 
-from crnsimulator.sample_crns import oscillator, bin_counter
+from crnsimulator import writeODElib, crn_to_ode
 from crnsimulator.odelib_template import add_integrator_args
+import crnsimulator.sample_crns as crnlib
 
 def main(args):
   """Translate a CRN into a system of ODEs. Optional: Simulate ODEs on-the-fly. """
@@ -17,9 +17,11 @@ def main(args):
   odefile = './' + args.output + '.py'
 
   if args.sample == 'oscillator':
-    crn = oscillator()
+    crn = crnlib.oscillator()
   elif args.sample == 'binary_counter':
-    crn = binary_counter()
+    crn = crnlib.binary_counter()
+  elif args.sample == 'roessler':
+    crn = crnlib.roessler()
   else :
     raise Exception('Cannot find the sample CRN:', args.sample)
 

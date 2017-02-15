@@ -1,19 +1,57 @@
-# Toehold binding:
-# fw = 10^6 /M/s
-# bw = 10^{6-L} /s
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ # 
 
-# branch-migration: 1/s
-# [A] = [B] = 100nM
+def oscillator(fw1=0.2, fw2=0.3, fw3=0.7):
+  return [[['A', 'B'], ['B', 'B'], fw1],
+          [['B', 'C'], ['C', 'C'], fw2],
+          [['C', 'A'], ['A', 'A'], fw3]] 
 
-# concentration of contstant species: 
-# Niranjan: ksd = 2*10^5 /M/s
-# fuel : 300nM
-# [A,B,C] = 30,10,10
-# [A,B,C] = 60,10,10
-
+def roessler(fw1=30, fw2=0.5, fw3=1, fw4=10, fw5=1, fw6 =16.5, fw7=0.5):
+  """ SoSeWi
+  X1 -> 2X1 [fw=30]
+  2X1 -> X1 [fw=0.5]
+  X2 + X1 -> 2X2
+  X2 -> 
+  X1 + X3 ->
+  X3 -> 2X3
+  2X3 -> X3
+  """
+  return [[['X1'],['X1', 'X1'],fw1],
+          [['X1', 'X1'],['X1'],fw2],
+          [['X2', 'X1'],['X2', 'X2'], fw3],
+          [['X2'],[],fw4],
+          [['X1', 'X3'],[],fw5],
+          [['X3'],['X3', 'X3'],fw6],
+          [['X3', 'X3'],['X3'],fw7]]
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
-# LOGIC EXPRESSIONS FROM SOLOVEICHIK TALK #
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ # 
+
+def binary_counter(fw1=0.5, bw1=0.1, fw2=0.5, bw2=1, fw3=0.5, bw3=0.1):
+  """ A binary counter with three digits:
+  # taken from: 
+
+  On : The nth bit is 0
+  In : The nth bit is 1
+
+  O1 <=> I1
+  O2 + I1 <=> I2 + O1
+  O3 + I2 + I1 <=> I3 + O2 + O1
+  """
+  return [[['O1'], ['I1'], fw1],
+          [['I1'], ['O1'], bw1],
+          [['O2', 'I1'], ['I2', 'O1'], fw2],
+          [['I2', 'O1'], ['O2', 'I1'], bw2],
+          [['O3', 'I2', 'I1'], ['I3', 'O2', 'O1'], fw3],
+          [['I3', 'O2', 'O1'], ['O3', 'I2', 'I1'], bw3]]
+
+def catalyst(fw1=0.2):
+  return [[['A', 'B'], ['A', 'A'], fw1]]
+
+def templated_autocatalysis(fw1=0.2):
+  return [[['A', 'B', 'C'], ['C', 'C'], fw1]]
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ # 
 def a_gt_b(fw1=1, fw2=1):
   """ Predicate: #A > #B
@@ -52,24 +90,6 @@ def oregonator():
   """
   pass
 
-def roessler(fw1=30, fw2=0.5, fw3=1, fw4=10, fw5=1, fw6 =16.5, fw7=0.5):
-  """ SoSeWi
-  X1 -> 2X1 [fw=30]
-  2X1 -> X1 [fw=0.5]
-  X2 + X1 -> 2X2
-  X2 -> 
-  X1 + X3 ->
-  X3 -> 2X3
-  2X3 -> X3
-  """
-  return [[['X1'],['X1', 'X1'],fw1],
-          [['X1', 'X1'],['X1'],fw2],
-          [['X2', 'X1'],['X2', 'X2'], fw3],
-          [['X2'],[],fw4],
-          [['X1', 'X3'],[],fw5],
-          [['X3'],['X3', 'X3'],fw6],
-          [['X3', 'X3'],['X3'],fw7]]
-
 def two_bit_pulse_counter():
   pass
 
@@ -78,20 +98,16 @@ def incrementor_state_machine():
 
 def majority():
   """
-
   X + Y -> 2B
   X + B -> 2X
   Y + B -> 2Y
-
   """
 
 def devide_and_conquer():
   """
-
   A -> 2A
   2A -> B + B
   B -> A
-
   """
 
 def mypredprey():
@@ -123,34 +139,5 @@ def predator_prey():
   k3 = 1   or 1/300 /s
 
   """
-
-def oscillator(fw1=0.2, fw2=0.3, fw3=0.7):
-  return [[['A', 'B'], ['B', 'B'], fw1],
-          [['B', 'C'], ['C', 'C'], fw2],
-          [['C', 'A'], ['A', 'A'], fw3]] 
-
-def catalyst(fw1=0.2):
-  return [[['A', 'B'], ['A', 'A'], fw1]]
-
-def templated_autocatalysis(fw1=0.2):
-  return [[['A', 'B', 'C'], ['C', 'C'], fw1]]
-
-def bin_counter(fw1=0.5, bw1=0.1, fw2=0.5, bw2=1, fw3=0.5, bw3=0.1):
-  """ A binary counter with three digits:
-  # taken from: 
-
-  On : The nth bit is 0
-  In : The nth bit is 1
-
-  O1 <=> I1
-  O2 + I1 <=> I2 + O1
-  O3 + I2 + I1 <=> I3 + O2 + O1
-  """
-  return [[['O1'], ['I1'], fw1],
-          [['I1'], ['O1'], bw1],
-          [['O2', 'I1'], ['I2', 'O1'], fw2],
-          [['I2', 'O1'], ['O2', 'I1'], bw2],
-          [['O3', 'I2', 'I1'], ['I3', 'O2', 'O1'], fw3],
-          [['I3', 'O2', 'O1'], ['O3', 'I2', 'I1'], bw3]]
 
 
