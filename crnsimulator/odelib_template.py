@@ -2,7 +2,7 @@
 
 # Do not modify this file. It contains a system of hardcoded ODEs together with
 # a set of default parameters. If you need adaptations, edit the source directly
-# at "crnsimulator.odelib_template".
+# at "crnsimulator.odelib_template" or provide your own template file.
 
 # call with: python ./#<&>ODENAME<&># [options]
 
@@ -68,18 +68,19 @@ def add_integrator_args(parser):
   # required: simulation time and output settings
   parser.add_argument("--t0", type=float, default=0, metavar='<flt>',
       help="First time point of the time-course.")
-  parser.add_argument("--t8", type=float, default=None, metavar='<flt>',
+  parser.add_argument("--t8", type=float, default=100000, metavar='<flt>',
       help="End point of simulation time.")
-  parser.add_argument("--t-lin", type=int, default=None, metavar='<int>',
+  parser.add_argument("--t-lin", type=int, default=50000, metavar='<int>',
       help="Returns --t-lin evenly spaced numbers on a linear scale from --t0 to --t8.")
   parser.add_argument("--t-log", type=int, default=None, metavar='<int>',
       help="Returns --t-log evenly spaced numbers on a logarithmic scale from --t0 to --t8.")
 
   # required: initial concentration vector
-  parser.add_argument("--p0", nargs='+', metavar='<int>=<flt>', #default=['1=1'],
-      help="Vector of initial species concentrations. E.g. \"--p0 1=0.5 3=0.7\" stands" + \
-          " for species number 1 at a concentration of 0.5 and species number 3 at" + \
-          " a concentration of 0.7")
+  parser.add_argument("--p0", nargs='+', metavar='<int/str>=<flt>',
+      help="Vector of initial species concentrations. " + \
+          "E.g. \"--p0 1=0.5 3=0.7\" stands for 1st species at a concentration of 0.5 " + \
+          "and 3rd species at a concentration of 0.7. You may chose to address species " + \
+          "directly by name, e.g.: --p0 C=0.5.")
 
   # optional: choose output formats
   parser.add_argument("--nxy", action='store_true',
@@ -95,8 +96,6 @@ def add_integrator_args(parser):
   parser.add_argument("--mxstep", type=int, default=0, metavar='<int>',
       help="Maximum number of steps allowed for each integration point in t.")
 
-  #parser.add_argument("--rates", default=None,
-  #    help="*not implemented*, using default for now!")
   return
 
 def integrate(args):
@@ -107,7 +106,7 @@ def integrate(args):
       (crnsimulator.add_integrator_args)
 
   Prints:
-    * Verbose information
+    - verbose information
     * plot files
     * time-course
       
@@ -115,19 +114,6 @@ def integrate(args):
     Nothing
 
   """
-
-  #p0 = args.p0
-  #t8 = args.t8
-  #t_inc = args.t_inc
-  #t_log = args.t_log
-  #t_lin = args.t_lin
-  #atol = args.atol
-  #rtol = args.rtol
-  #mxstep = args.mxstep
-
-  #nxy = args.nxy
-  #log = args.logfile # print verbose info to file.
-  #plotfile = args.pyplot # test.pdf, test.png, etc.
 
   #<&>SORTEDVARS<&>#
 
@@ -141,7 +127,7 @@ def integrate(args):
           'e.g. --p0 1=0.1 2=0.005 3=1e-6 (see --help)')
 
   if not args.t8 :
-    raise ValueError('Specify the end-time for the simulation: --t8 <flt>')
+    raise ValueError('Specify a valid end-time for the simulation: --t8 <flt>')
 
   if args.t_log :
     if args.t0 == 0 :
@@ -162,11 +148,16 @@ def integrate(args):
   else :
     for term in args.p0 :
       p,o = term.split('=')
-      p0[int(p)-1] = float(o)
+      try :
+        pi  = svars.index(p)
+      except ValueError, e: 
+        pi = int(p)-1
+      finally:
+        p0[pi] = float(o)
     print '# Initial concentrations:', zip(svars,p0)
 
   # TODO: It would be nice if it is possible to read alternative rates from a file instead.
-  # None triggers the default-rates that are hardcoded in the (this) library file.
+  # None triggers the default-rates that are hard-coded in the (this) library file.
   rates = None
 
   ny = odeint(#<&>ODENAME<&>#, 
@@ -179,7 +170,6 @@ def integrate(args):
 
   if args.pyplot :
     plotfile = ode_plotter(args.pyplot, time, ny, svars, log=True if args.t_log else False)
-    #plotfile = ode_plotter(args.pyplot, time, ny, svars, log=False)
     print '# Printed file:', plotfile
   
 if __name__ == '__main__':
