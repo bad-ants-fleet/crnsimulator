@@ -1,29 +1,48 @@
 #!/usr/bin/env python
+#
+# crnsimulator: simulate chemical reaction networks using ODEs
+# 
+# Written by Stefan Badelt (badelt@caltech.edu).
+#
+# Use at your own risk. 
+#
+#
 
+import os
+import sys
 import imp
 import argparse
 
 from crnsimulator import writeODElib, crn_to_ode
 from crnsimulator.odelib_template import add_integrator_args
-import crnsimulator.sample_crns as crnlib
+from crnsimulator.crn_parser import parse_crn_string, parse_crn_file
 
 def main(args):
   """Translate a CRN into a system of ODEs. Optional: Simulate ODEs on-the-fly. """
 
-  # *********************** #
-  # ARGUMENT PROCESSING 1/2 #
-  # ....................... #
+  # ********************* #
+  # ARGUMENT PROCESSING 1 #
+  # ..................... #
 
   odefile = './' + args.output + '.py'
 
-  if args.sample == 'oscillator':
-    crn = crnlib.oscillator()
-  elif args.sample == 'binary_counter':
-    crn = crnlib.binary_counter()
-  elif args.sample == 'roessler':
-    crn = crnlib.roessler()
-  else :
-    raise Exception('Cannot find the sample CRN:', args.sample)
+  input_crn = sys.stdin.readlines()
+  input_crn = "".join(input_crn)
+  crn, species = parse_crn_string(input_crn)
+
+  # Split CRN into irreversible reactions
+  new = []
+  for [r, p, k] in crn :
+    if None in k :
+      print Warning('# Set missing rates to 1.')
+      k[:] = [x if x != None else 1 for x in k]
+
+    if len(k) == 2:
+      new.append([r,p,k[0]])
+      new.append([p,r,k[1]])
+    else :
+      new.append([r,p,k[0]])
+  crn = new
 
   # **************** #
   # WRITE ODE SYSTEM #
@@ -41,28 +60,38 @@ def main(args):
     # PRINT ODE TO TEMPLATE #
     # ..................... #
     odefile2 =  writeODElib(V, M, jacobian=J, rdict=R, odename=args.output) 
-    #print '# TODO:', odefile, 'vs', odefile2
     print '# Wrote ODE system:', odefile
 
-  if args.t8 :
-    print '# Simulating the ODE system from file:', odefile
+
+  # ******************* #
+  # SIMULATE ODE SYSTEM #
+  # ................... #
+
+  if args.dryrun :
+    print '# Dryrun: Simulate the ODE system using:'
+    print "# python {} --help ".format(odefile)
+  else :
+    print '# Simulating the ODE system, change parameters using:'
+    print "# python {} --help ".format(odefile)
 
     _temp = imp.load_source(args.output, odefile)
     integrate = getattr(_temp, 'integrate')
+
+    # ********************* #
+    # ARGUMENT PROCESSING 2 #
+    # ..................... #
     integrate(args)
 
-  else :
-    print '# Specify --t8 to simulate the ODE system.'
-
+  return
 
 if __name__ == '__main__':
   parser = argparse.ArgumentParser(
           formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
-  parser.add_argument("--sample", default='oscillator',
-      help="Import a CRN directly from crnsimulator.sample_crns")
   parser.add_argument("--force", action='store_true',
       help="Overwrite existing files")
+  parser.add_argument("--dryrun", action='store_true',
+      help="Do not run the simulation, only write the files.")
   parser.add_argument("-o", "--output", default='odesystem', metavar='<str>',
       help="Name of ODE library files.")
   parser.add_argument("--no-jacobian", action='store_true',

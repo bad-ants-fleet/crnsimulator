@@ -1,3 +1,12 @@
+#
+# CRN-to-MultiDiGraph-to-ODE translation utilities.
+# 
+# Written by Stefan Badelt (badelt@caltech.edu).
+#
+# Use at your own risk. 
+#
+#
+
 import networkx as nx
 import sympy
 

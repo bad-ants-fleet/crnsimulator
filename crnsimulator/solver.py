@@ -1,8 +1,11 @@
-#!/usr/bin/env python
-
-# coded by: Stefan Badelt (badelt@caltech.edu)
-
-# from __future__ import division, absolute_import, print_function, unicode_literals
+#
+# CRN-to-MultiDiGraph-to-ODE translation utilities.
+# 
+# Written by Stefan Badelt (badelt@caltech.edu).
+#
+# Use at your own risk. 
+#
+#
 
 import os
 import imp # import from source on-the-fly

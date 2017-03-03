@@ -1,3 +1,12 @@
+#
+# Deprecated interface: A collection of CRNs.
+# 
+# Written by Stefan Badelt (badelt@caltech.edu).
+#
+# Use at your own risk. 
+#
+#
+
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ # 
 
