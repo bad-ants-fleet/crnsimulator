@@ -1,0 +1,6 @@
+# Rock-Paper-Scissors Oscillator
+
+A + B -> B + B [k = 0.2]
+B + C -> C + C [k = 0.4]
+C + A -> A + A [k = 0.7]
+
