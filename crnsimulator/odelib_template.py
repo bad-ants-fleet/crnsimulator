@@ -14,7 +14,7 @@
 # with some default parameters. It is recommended to edit the source directly
 # at "crnsimulator.odelib_template" or provide your own template file.
 #
-# call with: python ./#<&>ODENAME<&># --help
+# call with: python #<&>FILENAME<&># --help
 #
 
 import argparse
@@ -69,7 +69,7 @@ rates = {
 #<&>JACOBIAN<&>#
 
 def add_integrator_args(parser):
-  """Standard Simulation Aruments."""
+  """ODE integration aruments."""
 
   parser.add_argument("--list", action='store_true',
       help="Print all species and exit.")
@@ -116,12 +116,11 @@ def integrate(args):
 
   Prints:
     - verbose information
-    * plot files
-    * time-course
+    - plot files
+    - time-course
       
   Returns:
     Nothing
-
   """
 
   #<&>SORTEDVARS<&>#
@@ -134,6 +133,9 @@ def integrate(args):
       print '#', e, v
     raise SystemExit('# Specify a vector of initial concentrations: ' + \
           'e.g. --p0 1=0.1 2=0.005 3=1e-6 (see --help)')
+
+  if not args.nxy and not args.pyplot :
+    print Warning('# Use --pyplot and/or --nxy to plot your results.')
 
   if not args.t8 :
     raise ValueError('Specify a valid end-time for the simulation: --t8 <flt>')
@@ -152,7 +154,7 @@ def integrate(args):
     if sum(p0) == 0 :
       for e, v in enumerate(svars, 1) :
         print '#', e, v
-      raise ValueError('# Must specify a vector of initial concentrations: ' + \
+      raise SystemExit('# -- Must specify a vector of initial concentrations: ' + \
           'e.g. --p0 1=0.1 2=0.005 3=1e-6 (see --help)')
   else :
     for term in args.p0 :

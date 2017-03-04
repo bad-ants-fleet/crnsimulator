@@ -24,7 +24,8 @@ def main(args):
   # ARGUMENT PROCESSING 1 #
   # ..................... #
 
-  odefile = './' + args.output + '.py'
+  filename = args.output + '.py' if args.output[-3:] != '.py' else args.output
+  odename = 'odesystem'
 
   input_crn = sys.stdin.readlines()
   input_crn = "".join(input_crn)
@@ -48,8 +49,8 @@ def main(args):
   # WRITE ODE SYSTEM #
   # ................ #
 
-  if not args.force and os.path.exists(odefile):
-    print Warning('# Reading ODE system from existing file:', odefile)
+  if not args.force and os.path.exists(args.output):
+    print Warning('# Reading ODE system from existing file:', args.output)
   else :
     # ******************* #
     # BUILD REACTIONGRAPH #
@@ -59,8 +60,9 @@ def main(args):
     # ********************* #
     # PRINT ODE TO TEMPLATE #
     # ..................... #
-    odefile2 =  writeODElib(V, M, jacobian=J, rdict=R, odename=args.output) 
-    print '# Wrote ODE system:', odefile
+    filename, odename =  writeODElib(V, M, jacobian=J, rdict=R, 
+        filename = filename, odename = 'odename') 
+    print '# Wrote ODE system:', filename
 
 
   # ******************* #
@@ -69,12 +71,12 @@ def main(args):
 
   if args.dryrun :
     print '# Dryrun: Simulate the ODE system using:'
-    print "# python {} --help ".format(odefile)
+    print "#  python {} --help ".format(filename)
   else :
     print '# Simulating the ODE system, change parameters using:'
-    print "# python {} --help ".format(odefile)
+    print "#  python {} --help ".format(filename)
 
-    _temp = imp.load_source(args.output, odefile)
+    _temp = imp.load_source(odename, filename)
     integrate = getattr(_temp, 'integrate')
 
     # ********************* #

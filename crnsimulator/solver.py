@@ -6,18 +6,31 @@
 # Use at your own risk. 
 #
 #
+import crnsimulator.odelib_template
 
-import os
-import imp # import from source on-the-fly
-import argparse
+def writeODElib(svars, odeM, jacobian=None, rdict=None, concvect = [], 
+    odename = 'odesystem', filename = './odesystem', template = None) :
+  """ Write an ODE system into an executable python script.
 
-def writeODElib(svars, odeM, jacobian=None, rdict=None, 
-    odename = 'odesystem', path = './', concvect = [], template = None) :
-  """ Write a python script that contains the ODE system.
+  Args:
+    svars <list[str]>: Sorted list of variables. The sorting defines the order
+      for specifying concentrations. 
+    odeM <sympy.Matrix()>: A matrix that contains the ODE system.
+    jacobian <optional: sympy.Matrix()> : The jacobi Matrix corresponding to
+      odeM.
+    rdict <optional: dict()>: If your odeM contains rates in form of variable
+      names, then you need to supply this dictionary mapping names to float values.
+    concvect <optional: list(): Specify default initial species concentrations
+      in the order defined by svars.
+    odename <optional: str>: Name of your ODE function (no special characters!)
+    filename <optional: str>: Specify the name of the ODE library.
+    template <optional: str>: Specify an alternative template library file.
+
+  Returns:
+    filename<str>, odename<str>
 
   """
   if not template :
-    import crnsimulator.odelib_template
     template = crnsimulator.odelib_template.__file__[:-1]
 
   odetemp = ''
@@ -26,6 +39,7 @@ def writeODElib(svars, odeM, jacobian=None, rdict=None,
 
   # REPLACE NAMES
   odetemp = odetemp.replace("#<&>ODENAME<&>#",odename)
+  odetemp = odetemp.replace("#<&>FILENAME<&>#",filename)
 
   # DEFAULT RATES
   ratestring = ',\n'.join(
@@ -89,9 +103,9 @@ def writeODElib(svars, odeM, jacobian=None, rdict=None,
       concstring += "p0[{}] = {}\n  ".format(e,c)
   odetemp = odetemp.replace("#<&>DEFAULTCONCENTRATIONS<&>#",concstring)
 
-  odefile = path + '/' + odename + '.py'
-  with open(odefile,'w') as ofile :
+  if filename[-3:] != '.py' : filename += '.py'
+  with open(filename,'w') as ofile :
     ofile.write(odetemp)
 
-  return odefile
+  return filename, odename
 
