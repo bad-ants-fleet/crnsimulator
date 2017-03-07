@@ -10,167 +10,140 @@
 import networkx as nx
 import sympy
 
-def crn_to_ode(crn, rate_dict = True, sorted_vars = False, jacobian = True):
-  """A wrapper function for CRN_to_MultiDiGraph() and MultiDiGraph_to_ODE(). """
-  crn2, ode, rdict = MultiDiGraph_to_ODE(
-      CRN_to_MultiDiGraph(crn), rate_dict = rate_dict)
+from crnsimulator.solver import writeODElib
 
-  crn = sorted(map(lambda x: [sorted(x[0]), sorted(x[1]), x[2]], crn))
-  crn2 = sorted(map(lambda x: [sorted(x[0]), sorted(x[1]), x[2]], crn2))
-  assert crn == crn2
+class ReactionNode(object):
+  """A Reaction-Node in the ReactionGraph class. """
+  rid = 0
+  def __init__(self, prefix='RXN:'):
+    self._name = prefix + str(ReactionNode.rid)
+    ReactionNode.rid += 1
 
-  if sorted_vars :
-    assert len(sorted_vars) == len(ode.keys())
-  else :
-    sorted_vars = sorted(ode.keys())
+  @property
+  def name(self):
+    return self._name
 
-  M = []
-  for dx in sorted_vars :
-    sfunc = sympy.sympify(' + '.join(['*'.join(map(str,xp)) for xp in ode[dx]]))
-    ode[dx] = sfunc
-    M.append(sfunc)
+class ReactionGraph(object):
+  """Basic Reaction Graph Object. """
 
-  M = sympy.Matrix(M)
+  def __init__(self, crn = [], nxgraph = None):
+    self._RG = nx.MultiDiGraph()
+    if crn :
+      self.add_reactions(crn)
+    elif nxgraph :
+      raise NotImplementedError
+      self._RG = nx.MultiDiGraph(nxgraph)
+      self._rnode = lambda (g,n): g.n
+      self._rates = lambda (g,n): g.n
+      self._exclude = lambda (g,n): g.n
+      self._rename = None
 
-  if jacobian :
-    # NOTE: The sympy version breaks regularly:
-    # J = M.jacobian(sorted_vars)
-    # ... so it is done per pedes:
-    J = []
-    for f in M :
-      for x in sorted_vars:
-        J.append(f.diff(x))
-    J = sympy.Matrix(J)
-  else :
-    J=None
+  #@property
+  #def reactions(self):
+  #  return [n for n in self._RG.nodes() if isinstance(n, ReactionNode)]
 
-  if rate_dict :
+  @property
+  def species(self):
+    return [n for n in self._RG.nodes() if not isinstance(n, ReactionNode)]
+
+  @property
+  def reactants(self):
+    return [n for n in self._RG.nodes() if not isinstance(n, ReactionNode) \
+        and self._RG.out_edges(n)]
+
+  @property
+  def products(self):
+    return [n for n in self._RG.nodes() if not isinstance(n, ReactionNode) \
+        and self._RG.in_edges(n)]
+
+  def write_ODE_lib(self, sorted_vars=[], concvect=[], jacobian=False, rate_dict=False,
+      odename = 'odesystem', filename = './odesystem', template = None):
+
+    if concvect: assert len(concvect) == len(sorted_vars)
+
+    V, M, J, R = self.ode_system(sorted_vars = sorted_vars, jacobian =
+        jacobian, rate_dict=rate_dict) 
+
+    return writeODElib(V, M, jacobian=J, rdict=R, concvect = concvect, 
+        odename = odename, filename = filename, template = None)
+
+  def ode_system(self, sorted_vars= [], jacobian = False, rate_dict = False):
+    odict, rdict = self.get_odes(rate_dict = rate_dict)
+
+    if sorted_vars :
+      assert len(sorted_vars) == len(odict.keys())
+    else :
+      sorted_vars = sorted(odict.keys())
+
+    M = []
+    for dx in sorted_vars :
+      M.append(sympy.sympify(' + '.join(['*'.join(map(str,xp)) for xp in odict[dx]])))
+    M = sympy.Matrix(M)
+
+    if jacobian :
+      # NOTE: The sympy version breaks regularly:
+      # J = M.jacobian(sorted_vars)
+      # ... so it is done per pedes:
+      J = []
+      for f in M :
+        for x in sorted_vars:
+          J.append(f.diff(x))
+      J = sympy.Matrix(J)
+    else :
+      J=None
+
     return sorted_vars, M, J, rdict
-  else :
-    return sorted_vars, M, J
 
-def CRN_to_MultiDiGraph(crn):
-  """ """
-  RG = nx.MultiDiGraph()
-  num = 0
-  for reaction in crn :
-    hyper = 'REACT:' + str(num)
-    rate = reaction[2]
-    for reac in reaction[0]:
-      RG.add_weighted_edges_from([(reac, hyper, rate)])
-    for prod in reaction[1]:
-      RG.add_weighted_edges_from([(hyper, prod, rate)])
-    RG.node[hyper]['rate'] = rate
-    num += 1
-  return RG
-
-def MultiDiGraph_to_ODE(RG, rate_dict = False, 
-    reactf = lambda r : r[:6] == 'REACT:', 
-    ratef = lambda x,y : x.node[y]['rate']):
-  """ Translate a networkx MultiDiGraph into a ODE system.
-  
-  For every reaction vertex, append the respective species to a dictionary of
-  nodes. Every species is a node in the graph, so the information of which
-  species is consumed and produced can simply be appended to 
-
-  ndict['A'] = ['k1','A','B'] + ['-k2', 'B', 'C']
-
-  ... where k1 is a string that contains either the actual number, or the key for 
-  a separate rate_dictionary. The latter is usefull when solving ODEs with 
-  scipy.odeint(). Otherwise simulations are extremely unstable.
-
-  Returns:
-    crn (list([k1, [A,B], [A,A]]))
-    ndict (ndict['A'] = [['k1','A','B'], ['-k2', 'B', 'C']])
-    rdict (rdict['k1'] = 0.2)
-  
-  """
-  ndict = {}
-  rdict = {}
-  crn = []
-  ode = {}
-  for r in RG.nodes_iter() :
-    if not reactf(r) : continue
-    if rate_dict :
-      rate = 'k'+str(len(rdict.keys()))
-      rdict[rate] = ratef(RG,r)
-    else :
-      rate = str(ratef(RG,r))
-
-    reactants = []
-    for reac in RG.predecessors_iter(r) :
-      for i in range(RG.number_of_edges(reac, r)) :
-        reactants.append(reac)
-
-    products = []
-    for prod in RG.successors_iter(r) :
-      for i in range(RG.number_of_edges(r, prod)) :
-        products.append(prod)
- 
-
-    for x in reactants: 
-      if x in ode :
-        ode[x].append(['-'+rate] + reactants)
+  def get_odes(self, rate_dict = False):
+    rdict = dict()
+    odes  = dict()
+    for rxn in self._RG.nodes_iter() :
+      if not isinstance(rxn, ReactionNode): continue
+      if rate_dict :
+        rate = 'k'+str(len(rdict.keys()))
+        rdict[rate] = self._RG.node[rxn]['rate']
       else :
-        ode[x]= [['-'+rate] + reactants]
+        rate = str(self._RG.node[rxn]['rate'])
 
-    for x in products: 
-      if x in ode :
-        ode[x].append([rate] + reactants)
-      else :
-        ode[x]= [[rate] + reactants]
+      reactants = []
+      for reac in self._RG.predecessors_iter(rxn) :
+        for i in range(self._RG.number_of_edges(reac, rxn)) :
+          reactants.append(reac)
 
-    crn.append([reactants, products, ratef(RG,r)])
-  return crn, ode, rdict
+      products = []
+      for prod in self._RG.successors_iter(rxn) :
+        for i in range(self._RG.number_of_edges(rxn, prod)) :
+          products.append(prod)
 
-def DiGraph_to_ODE(CG, rate_dict = False):
-  #""" Translate a networkx MultiDiGraph into a ODE system.
-  #
-  #For every reaction vertex, append the respective species to a dictionary of
-  #nodes. Every species is a node in the graph, so the information of which
-  #species is consumed and produced can simply be appended to 
+      for x in reactants: 
+        if x in odes :
+          odes[x].append(['-'+rate] + reactants)
+        else :
+          odes[x]= [['-'+rate] + reactants]
 
-  #ndict['A'] = ['k1','A','B'] + ['-k2', 'B', 'C']
+      for x in products: 
+        if x in odes :
+          odes[x].append([rate] + reactants)
+        else :
+          odes[x]= [[rate] + reactants]
 
-  #... where k1 is a string that contains either the actual number, or the key for 
-  #a separate rate_dictionary. The latter is usefull when solving ODEs with 
-  #scipy.odeint(). Otherwise simulations are extremely unstable.
+    return odes, rdict
 
-  #Returns:
-  #  crn (list([k1, [A,B], [A,A]]))
-  #  ndict (ndict['A'] = [['k1','A','B'], ['-k2', 'B', 'C']])
-  #  rdict (rdict['k1'] = 0.2)
-  #
-  #"""
-  ndict = {}
-  rdict = {}
-  crn = []
-  ode = {}
+  def add_reactions(self, crn):
+    assert type(crn) == list
+    for rxn in crn :
+      self.add_reaction(rxn)
+    return
 
-  # preprocess => add REACT vertices:
-  for e in CG.edges_iter() :
-    if e[0][:6] == 'REACT:' or e[1][:6] == 'REACT:' : 
-      raise RuntimeError('unexpected reaction node')
-    if not CG.node[e[0]]['active'] or not CG.node[e[1]]['active'] :
-      continue
-    if rate_dict :
-      rate = 'k' + str(len(rdict.keys()))
-      rdict[rate] = CG[e[0]][e[1]]['weight']
-    else :
-      rate = str(CG[e[0]][e[1]]['weight'])
-
-    reactant = 'id_' + str(CG.node[e[0]]['identity'])
-    product = 'id_' + str(CG.node[e[1]]['identity'])
-    if reactant in ode:
-      ode[reactant].append(['-'+rate] + [reactant])
-    else :
-      ode[reactant] = [['-'+rate] + [reactant]]
-
-    if product in ode:
-      ode[product].append([rate] + [reactant])
-    else :
-      ode[product] = [[rate] + [reactant]]
-
-    crn.append([[reactant], [product], CG[e[0]][e[1]]['weight']])
-  return crn, ode, rdict
+  def add_reaction(self, rxn):
+    assert len(rxn) == 3
+    n = ReactionNode()
+    self._RG.add_node(n, rate=rxn[2])
+    for r in rxn[0]:
+      assert isinstance(r, str)
+      self._RG.add_edge(r, n)
+    for p in rxn[1]:
+      assert isinstance(p, str)
+      self._RG.add_edge(n, p)
+    return 
 

@@ -13,7 +13,7 @@ import sys
 import imp
 import argparse
 
-from crnsimulator import writeODElib, crn_to_ode
+from crnsimulator import ReactionGraph
 from crnsimulator.odelib_template import add_integrator_args
 from crnsimulator.crn_parser import parse_crn_string, parse_crn_file
 
@@ -23,7 +23,6 @@ def main(args):
   # ********************* #
   # ARGUMENT PROCESSING 1 #
   # ..................... #
-
   filename = args.output + '.py' if args.output[-3:] != '.py' else args.output
   odename = 'odesystem'
 
@@ -48,27 +47,25 @@ def main(args):
   # **************** #
   # WRITE ODE SYSTEM #
   # ................ #
-
   if not args.force and os.path.exists(args.output):
     print Warning('# Reading ODE system from existing file:', args.output)
   else :
     # ******************* #
     # BUILD REACTIONGRAPH #
     # ................... #
-    V, M, J, R = crn_to_ode(crn, jacobian = False if args.no_jacobian else True)
+    RG = ReactionGraph(crn)
 
     # ********************* #
     # PRINT ODE TO TEMPLATE #
     # ..................... #
-    filename, odename =  writeODElib(V, M, jacobian=J, rdict=R, 
-        filename = filename, odename = 'odename') 
+    filename, odename = RG.write_ODE_lib(sorted_vars=sorted(RG.species), 
+            jacobian = not args.no_jacobian, filename = filename,
+            odename = odename)
     print '# Wrote ODE system:', filename
-
 
   # ******************* #
   # SIMULATE ODE SYSTEM #
   # ................... #
-
   if args.dryrun :
     print '# Dryrun: Simulate the ODE system using:'
     print "#  python {} --help ".format(filename)
