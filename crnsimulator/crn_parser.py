@@ -142,7 +142,7 @@ def post_process(crn):
     else :
       raise ValueError('Wrong CRN format!')
     species = species.union(r).union(p)
-  return new, list(species)
+  return new, sorted(list(species))
 
 def parse_crn_file(filename, process=True):
   """Parses a CRN from a file. 
