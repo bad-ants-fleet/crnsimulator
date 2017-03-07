@@ -31,7 +31,9 @@ def writeODElib(svars, odeM, jacobian=None, rdict=None, concvect = [],
 
   """
   if not template :
-    template = crnsimulator.odelib_template.__file__[:-1]
+    template = crnsimulator.odelib_template.__file__[:]
+    if template[-1] == 'c':
+      template = template[:-1]
 
   odetemp = ''
   with open(template, 'r') as tfile:
