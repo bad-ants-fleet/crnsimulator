@@ -15,11 +15,11 @@ version = __import__('crnsimulator').__version__
 setup(
     name='crnsimulator',
     version=version,
-    description='CRN-to-ODE translator',
+    description='Simulate CRNs using ODEs.',
     long_description=readme,
     author='Stefan Badelt',
     author_email='badelt@caltech.edu',
-    #url='http://github...',
+    url='https://github.com/bad-ants-fleet/crnsimulator',
     license=license,
     install_requires=[
         'sympy>=0.7.6.1', 
@@ -28,7 +28,6 @@ setup(
         'networkx>=1.10'],
     test_suite='tests',
     packages=['crnsimulator'],
-    include_package_data=True,
     scripts=['scripts/crnsimulator']
 )
 
