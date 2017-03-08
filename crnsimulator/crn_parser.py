@@ -60,7 +60,7 @@ def crn_document_setup(modular = False):
   multiplier = W(nums)
   species = G(O(multiplier) + identifier)
 
-  rate = C(W(nums) + O(L('.') + W(nums)))
+  rate = C(W(nums) + O((L('.') + W(nums)) | (L('e') + O('-') + W(nums))))
 
   k = G(S('[') + S('k') + S('=') + rate + S(']'))
   rev_k = G(S('[') + S('kf') + S('=') + rate + S(',') + \
