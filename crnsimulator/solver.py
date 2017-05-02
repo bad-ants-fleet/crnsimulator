@@ -5,7 +5,7 @@
 #
 # Use at your own risk. 
 #
-#
+
 import crnsimulator.odelib_template
 
 def writeODElib(svars, odeM, jacobian=None, rdict=None, concvect = [], 
@@ -60,8 +60,12 @@ def writeODElib(svars, odeM, jacobian=None, rdict=None, concvect = [],
   for i in range(len(svars)):
     functionstring += "  d{}dt = {}\n".format(svars[i], odeM[i]) 
   ## return
-  functionstring += "  return np.array([{}])".format(
-      ', '.join(map(lambda x: 'd'+x+'dt', svars)))
+  if len(svars)==1:
+    functionstring += "  return np.array({})".format(
+        ', '.join(map(lambda x: 'd'+x+'dt', svars)))
+  else :
+    functionstring += "  return np.array([{}])".format(
+        ', '.join(map(lambda x: 'd'+x+'dt', svars)))
   odetemp = odetemp.replace("#<&>ODECALL<&>#",functionstring)
 
   if jacobian:
@@ -87,6 +91,11 @@ def writeODElib(svars, odeM, jacobian=None, rdict=None, concvect = [],
       else :
         i += 1
         j = 0
+
+    if len(svars) == 1:
+      jacobianstring += "  J = J[0]\n"
+
+
     ## return
     jacobianstring += "  return J"
     odetemp = odetemp.replace("#<&>JACOBIAN<&>#",jacobianstring)

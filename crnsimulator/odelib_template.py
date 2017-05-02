@@ -23,9 +23,9 @@ import matplotlib.pyplot as plt
 from scipy.integrate import odeint
 
 # Uncomment this section for seaborn plot-style
-import seaborn as sns
-sns.set()
-sns.set_context("notebook", font_scale=1, rc={"lines.linewidth": 2.0})
+#import seaborn as sns
+#sns.set()
+#sns.set_context("notebook", font_scale=1, rc={"lines.linewidth": 2.0})
 
 def ode_plotter(name, t, ny, svars, log=False):
   """ Plots the ODE trajectories.
@@ -48,6 +48,10 @@ def ode_plotter(name, t, ny, svars, log=False):
   for e, y in enumerate(ny) :
     ax.plot(t, y, '-', label=svars[e])
 
+  # Common custom adjustments:
+  # ax.plot(t, y, '-', zorder=2, lw=1.5, color='green', label=svars[e])
+  # plt.title('A title for my plot')
+
   ax.set_xlabel('Time [s]', fontsize=16)
   ax.set_ylabel('Concentration [M]', fontsize=16)
   if log :
@@ -57,6 +61,7 @@ def ode_plotter(name, t, ny, svars, log=False):
 
   plt.legend()
   fig.tight_layout()
+  #plt.show()
   plt.savefig(name)
   return name
 
@@ -182,6 +187,8 @@ def integrate(args):
   if args.pyplot :
     plotfile = ode_plotter(args.pyplot, time, ny, svars, log=True if args.t_log else False)
     print '# Printed file:', plotfile
+
+  return zip(time, *ny)
   
 if __name__ == '__main__':
   parser = argparse.ArgumentParser(
