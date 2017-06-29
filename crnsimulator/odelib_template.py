@@ -27,26 +27,45 @@ from scipy.integrate import odeint
 #sns.set()
 #sns.set_context("notebook", font_scale=1, rc={"lines.linewidth": 2.0})
 
-def ode_plotter(name, t, ny, svars, log=False):
+def ode_plotter(name, t, ny, svars, log=False, labels=None):
   """ Plots the ODE trajectories.
 
   Args:
-    name <str>: Name of the outputfile (supports *.pdf and *.png)
-    t <list[flt]> : time units plotted on the x-axis.
-    ny <list[list[flt]]> : a list of trajectories plotted on the y-axis.
-    svars <list[str]>: A list of names for every trajectory in ny
-    log <optional:<bool>>: Plot data on a logarithmic time scale
+    name (str): Name of the outputfile including extension (e.g. *.pdf)
+    t (list[flt]) : time units plotted on the x-axis.
+    ny (list[list[flt]]) : a list of trajectories plotted on the y-axis.
+    svars (list[str]): A list of names for every trajectory in ny
+    log (bool,optional): Plot data on a logarithmic time scale
+    labels (set(),optional): Define species that appear labelled in the plot
 
   Prints:
-    A file containing the plot (Format *.pdf or *.png)
+    A file containing the plot (Format *.pdf, *.png, etc.)
 
   Returns:
-    name <str>: Name of the file containing the plot
+    [str]: Name of the file containing the plot
   """
   fig, ax = plt.subplots(1, 1, figsize=(7, 3.25))
 
-  for e, y in enumerate(ny) :
-    ax.plot(t, y, '-', label=svars[e])
+  # b : blue.
+  # g : green.
+  # r : red.
+  # c : cyan.
+  # m : magenta.
+  # y : yellow.
+  # k : black.
+  mycolors = list('bgrcmyk')
+
+  if labels:
+    i = 0
+    for e, y in enumerate(ny) :
+      if svars[e] in labels:
+        ax.plot(t, y, '-', label=svars[e], color=mycolors[i])
+        i = i + 1 if i < len(mycolors)-1 else 0
+      else:
+        ax.plot(t, y, '--', color='gray')
+  else :
+    for e, y in enumerate(ny) :
+      ax.plot(t, y, '-', label=svars[e])
 
   # Common custom adjustments:
   # ax.plot(t, y, '-', zorder=2, lw=1.5, color='green', label=svars[e])
@@ -101,6 +120,8 @@ def add_integrator_args(parser):
       help="Print time course in nxy format.")
   parser.add_argument("--pyplot", default='', metavar='<str>',
       help="Specify a filename to plot the ODE simulation.")
+  parser.add_argument("--pyplot-labels", nargs='+', default=[], metavar='<str>+',
+      help="Specify the species which should appear in the pyplot legend.")
 
   # advanced: scipy.integrate.odeint parameters
   parser.add_argument("-a", "--atol", type=float, default=None, metavar='<flt>',
@@ -116,8 +137,8 @@ def integrate(args):
   """Main interface to solve the ODE-system.
 
   Args:
-    args <argparse()>: An argparse object containing all of the arguments as specified above
-      (crnsimulator.add_integrator_args)
+    args (:obj:`argparse.ArgumentParser()`): An argparse object containing all of
+      the arguments of :obj:`crnsimulator.add_integrator_args()`.
 
   Prints:
     - verbose information
@@ -185,7 +206,9 @@ def integrate(args):
       print ' '.join(map("{:.9e}".format, i))
 
   if args.pyplot :
-    plotfile = ode_plotter(args.pyplot, time, ny, svars, log=True if args.t_log else False)
+    plotfile = ode_plotter(args.pyplot, time, ny, svars, 
+            log=True if args.t_log else False, 
+            labels = set(args.pyplot_labels))
     print '# Printed file:', plotfile
 
   return zip(time, *ny)
