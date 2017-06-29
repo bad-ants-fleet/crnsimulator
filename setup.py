@@ -23,7 +23,6 @@ setup(
     license=license,
     install_requires=[
         'sympy>=0.7.6.1', 
-        'argparse>=1.2.1', 
         'scipy>=0.16.1', 
         'networkx>=1.10'],
     test_suite='tests',
