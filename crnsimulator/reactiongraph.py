@@ -12,6 +12,10 @@ import sympy
 
 from crnsimulator.solver import writeODElib
 
+class CRNSimulatorError(Exception):
+  def __init__(self, message):
+    super(CRNSimulatorError, self).__init__(message)
+
 class ReactionNode(object):
   """A Reaction-Node in the ReactionGraph class. """
   rid = 0
@@ -31,7 +35,7 @@ class ReactionGraph(object):
     if crn :
       self.add_reactions(crn)
     elif nxgraph :
-      raise NotImplementedError
+      raise CRNSimulatorError('Initialization from Graph is not implemented.')
       self._RG = nx.MultiDiGraph(nxgraph)
       self._rnode = lambda (g,n): g.n
       self._rates = lambda (g,n): g.n
@@ -61,6 +65,8 @@ class ReactionGraph(object):
 
     if concvect: assert len(concvect) == len(sorted_vars)
 
+    if 'S' in set(sorted_vars):
+      raise CRNSimulatorError('S must not be a species name, sorry.')
     V, M, J, R = self.ode_system(sorted_vars = sorted_vars, jacobian =
         jacobian, rate_dict=rate_dict) 
 
