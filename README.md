@@ -86,7 +86,7 @@ $ python setup.py install --user
 ```
   
 ## Version
-0.1
+0.1.1
 
 ## Complete list of Python dependencies:
 All dependencies are available using `pip`:

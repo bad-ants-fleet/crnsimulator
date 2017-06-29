@@ -6,7 +6,7 @@
 # Use at your own risk. 
 #
 #
-__version__ = "v0.1"
+__version__ = "v0.1.1"
 
 from crnsimulator.crn_parser import parse_crn_string, parse_crn_file
 from crnsimulator.reactiongraph import ReactionGraph
