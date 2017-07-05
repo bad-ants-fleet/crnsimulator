@@ -8,7 +8,7 @@
 #
 
 import networkx as nx
-import sympy
+from sympy import sympify, Matrix, Symbol
 
 from crnsimulator.solver import writeODElib
 
@@ -30,7 +30,7 @@ class ReactionNode(object):
 class ReactionGraph(object):
   """Basic Reaction Graph Object. """
 
-  def __init__(self, crn = [], nxgraph = None):
+  def __init__(self, crn = None, nxgraph = None):
     self._RG = nx.MultiDiGraph()
     if crn :
       self.add_reactions(crn)
@@ -60,31 +60,35 @@ class ReactionGraph(object):
     return [n for n in self._RG.nodes() if not isinstance(n, ReactionNode) \
         and self._RG.in_edges(n)]
 
-  def write_ODE_lib(self, sorted_vars=[], concvect=[], jacobian=False, rate_dict=False,
+  def write_ODE_lib(self, sorted_vars=None, concvect=None, jacobian=False, rate_dict=False,
       odename = 'odesystem', filename = './odesystem', template = None):
 
     if concvect: assert len(concvect) == len(sorted_vars)
 
-    if 'S' in set(sorted_vars):
-      raise CRNSimulatorError('S must not be a species name, sorry.')
     V, M, J, R = self.ode_system(sorted_vars = sorted_vars, jacobian =
         jacobian, rate_dict=rate_dict) 
 
     return writeODElib(V, M, jacobian=J, rdict=R, concvect = concvect, 
         odename = odename, filename = filename, template = None)
 
-  def ode_system(self, sorted_vars= [], jacobian = False, rate_dict = False):
+  def ode_system(self, sorted_vars = None, jacobian = False, rate_dict = False):
     odict, rdict = self.get_odes(rate_dict = rate_dict)
 
+
     if sorted_vars :
+      sorted_vars = map(Symbol, sorted_vars)
       assert len(sorted_vars) == len(odict.keys())
     else :
-      sorted_vars = sorted(odict.keys())
+      sorted_vars = sorted(odict.keys(), key=lambda x: str(x))
+
+    # Symbol namespace dictionary, translates every variable name into a Symbol,
+    #   even awkward names such as 'sin' or 'cos'
+    ns = dict(zip(map(str,sorted_vars), sorted_vars))
 
     M = []
     for dx in sorted_vars :
-      M.append(sympy.sympify(' + '.join(['*'.join(map(str,xp)) for xp in odict[dx]])))
-    M = sympy.Matrix(M)
+      M.append(sympify(' + '.join(['*'.join(map(str,xp)) for xp in odict[dx]]), locals=ns))
+    M = Matrix(M)
 
     if jacobian :
       # NOTE: The sympy version breaks regularly:
@@ -94,13 +98,19 @@ class ReactionGraph(object):
       for f in M :
         for x in sorted_vars:
           J.append(f.diff(x))
-      J = sympy.Matrix(J)
+      J = Matrix(J)
     else :
       J=None
 
     return sorted_vars, M, J, rdict
 
   def get_odes(self, rate_dict = False):
+    """Translate the reaction graph into ODEs. 
+
+    Returns:
+      sympy.Symbols
+    
+    """
     rdict = dict()
     odes  = dict()
     for rxn in self._RG.nodes_iter() :
@@ -114,24 +124,24 @@ class ReactionGraph(object):
       reactants = []
       for reac in self._RG.predecessors_iter(rxn) :
         for i in range(self._RG.number_of_edges(reac, rxn)) :
-          reactants.append(reac)
+          reactants.append(Symbol(reac))
 
       products = []
       for prod in self._RG.successors_iter(rxn) :
         for i in range(self._RG.number_of_edges(rxn, prod)) :
-          products.append(prod)
+          products.append(Symbol(prod))
 
       for x in reactants: 
         if x in odes :
           odes[x].append(['-'+rate] + reactants)
         else :
-          odes[x]= [['-'+rate] + reactants]
+          odes[x] = [['-'+rate] + reactants]
 
       for x in products: 
         if x in odes :
           odes[x].append([rate] + reactants)
         else :
-          odes[x]= [[rate] + reactants]
+          odes[x] = [[rate] + reactants]
 
     return odes, rdict
 

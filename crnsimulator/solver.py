@@ -8,7 +8,7 @@
 
 import crnsimulator.odelib_template
 
-def writeODElib(svars, odeM, jacobian=None, rdict=None, concvect = [], 
+def writeODElib(svars, odeM, jacobian=None, rdict=None, concvect = None, 
     odename = 'odesystem', filename = './odesystem', template = None) :
   """ Write an ODE system into an executable python script.
 
@@ -34,6 +34,8 @@ def writeODElib(svars, odeM, jacobian=None, rdict=None, concvect = [],
     template = crnsimulator.odelib_template.__file__[:]
     if template[-1] == 'c':
       template = template[:-1]
+
+  svars = map(str, svars)
 
   odetemp = ''
   with open(template, 'r') as tfile:
@@ -109,9 +111,10 @@ def writeODElib(svars, odeM, jacobian=None, rdict=None, concvect = [],
   # Default concentrations in integrate()
   concstring = ''
   #print "\n  ".join([map("p0[{}] = {}".format, enumerate(concvect))])
-  for e, c in enumerate(concvect) :
-    if c :
-      concstring += "p0[{}] = {}\n  ".format(e,c)
+  if concvect:
+    for e, c in enumerate(concvect) :
+      if c :
+        concstring += "p0[{}] = {}\n  ".format(e,c)
   odetemp = odetemp.replace("#<&>DEFAULTCONCENTRATIONS<&>#",concstring)
 
   if filename[-3:] != '.py' : filename += '.py'
