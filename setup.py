@@ -24,7 +24,7 @@ setup(
         'sympy>=0.7.6.1',
         'matplotlib',
         'scipy>=0.16.1',
-        'networkx>=2.1'],
+        'networkx>=1.1'],
     test_suite='tests',
     packages=['crnsimulator'],
     scripts=['scripts/crnsimulator']
