@@ -7,7 +7,6 @@
 #
 #
 
-from __future__ import unicode_literals
 from builtins import zip
 from builtins import str
 from builtins import map
@@ -94,12 +93,14 @@ class ReactionGraph(object):
 
         # Symbol namespace dictionary, translates every variable name into a Symbol,
         #   even awkward names such as 'sin' or 'cos'
-        ns = dict(list(zip(list(map(str, sorted_vars)), sorted_vars)))
+        ns = dict(zip(map(str, sorted_vars), sorted_vars))
 
         M = []
         for dx in sorted_vars:
-            M.append(
-                sympify(' + '.join(['*'.join(map(str, xp)) for xp in odict[dx]]), locals=ns))
+            sfunc = sympify(
+                ' + '.join(['*'.join(map(str, xp)) for xp in odict[dx]]), locals=ns)
+            odict[dx] = sfunc
+            M.append(sfunc)
         M = Matrix(M)
 
         if jacobian:
@@ -167,6 +168,9 @@ class ReactionGraph(object):
     def add_reaction(self, rxn):
         assert len(rxn) == 3
         n = ReactionNode()
+        # sometimes the format is [[react],[prod], [k]],
+        # sometimes it is [[react],[prod], k]
+        rxn[2] = rxn[2] if not isinstance(rxn[2], list) else rxn[2][0]
         self._RG.add_node(n, rate=rxn[2])
         for r in rxn[0]:
             # breaks with utf-8 strings... unfortunately

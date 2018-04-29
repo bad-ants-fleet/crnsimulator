@@ -11,7 +11,6 @@
 #
 #
 
-from __future__ import unicode_literals
 from pyparsing import (Word, Literal, Group, Suppress, Combine, Optional,
                        alphas, nums, alphanums, delimitedList, StringStart, StringEnd, LineEnd,
                        ZeroOrMore, OneOrMore, pythonStyleComment, ParseElementEnhance)
@@ -19,7 +18,6 @@ from pyparsing import (Word, Literal, Group, Suppress, Combine, Optional,
 
 class CRNParseError(Exception):
     pass
-
 
 def crn_document_setup(modular=False):
     """Parse a formal chemical reaction network.
@@ -66,7 +64,10 @@ def crn_document_setup(modular=False):
     multiplier = W(nums)
     species = G(O(multiplier) + identifier)
 
-    rate = C(W(nums) + O((L('.') + W(nums)) | (L('e') + O('-') + W(nums))))
+    number = W(nums, nums)
+    num_flt = C(number + O(L('.') + number))
+    num_sci = C(number + O(L('.') + number) + L('e') + O(L('-') | L('+')) + W(nums))
+    rate = num_sci | num_flt
 
     k = G(S('[') + S('k') + S('=') + rate + S(']'))
     rev_k = G(S('[') + S('kf') + S('=') + rate + S(',') +
@@ -92,7 +93,6 @@ def crn_document_setup(modular=False):
     document = StringStart() + ZeroOrMore(S(LineEnd())) + crn + StringEnd()
     document.ignore(pythonStyleComment)
     return document
-
 
 def post_process(crn):
     """Process a parsed CRN.
@@ -150,7 +150,6 @@ def post_process(crn):
         species = species.union(r).union(p)
     return new, sorted(list(species))
 
-
 def parse_crn_file(filename, process=True):
     """Parses a CRN from a file.
 
@@ -170,7 +169,6 @@ def parse_crn_file(filename, process=True):
     else:
         return crn_document.parseFile(filename, parseAll=True).asList()
 
-
 def parse_crn_string(data, process=True):
     """Parses a CRN from a string.
 
@@ -188,3 +186,4 @@ def parse_crn_string(data, process=True):
         return post_process(crn_document.parseString(data).asList())
     else:
         return crn_document.parseString(data).asList()
+

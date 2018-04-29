@@ -6,7 +6,6 @@
 # Use at your own risk.
 #
 
-from __future__ import unicode_literals
 from builtins import map
 from builtins import str
 from builtins import range
@@ -114,7 +113,7 @@ def writeODElib(svars, odeM, jacobian=None, rdict=None, concvect=None,
 
     # Default concentrations in integrate()
     concstring = ''
-    # print "\n  ".join([map("p0[{}] = {}".format, enumerate(concvect))])
+
     if concvect:
         for e, c in enumerate(concvect):
             if c:
