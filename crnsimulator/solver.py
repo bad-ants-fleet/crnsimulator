@@ -57,20 +57,20 @@ def writeODElib(svars, odeM, jacobian=None, rdict=None, concvect=None,
     # ODEINT FUNCTION
     functionstring = "def {}(p0, t0, r):\n".format(odename)
     # Initialize arguments
-    functionstring += "  {} = p0\n".format(', '.join(svars))
-    functionstring += "  if not r : r = rates\n\n"
+    functionstring += "    {} = p0\n".format(', '.join(svars))
+    functionstring += "    if not r : r = rates\n\n"
     for k in sorted(rdict.keys()):
-        functionstring += "  {} = r['{}']\n".format(k, k)
+        functionstring += "    {} = r['{}']\n".format(k, k)
     functionstring += "\n"
     # Write the ODEs
     for i in range(len(svars)):
-        functionstring += "  d{}dt = {}\n".format(svars[i], odeM[i])
+        functionstring += "    d{}dt = {}\n".format(svars[i], odeM[i])
     # return
     if len(svars) == 1:
-        functionstring += "  return np.array({})".format(
+        functionstring += "    return np.array({})".format(
             ', '.join(['d' + x + 'dt' for x in svars]))
     else:
-        functionstring += "  return np.array([{}])".format(
+        functionstring += "    return np.array([{}])".format(
             ', '.join(['d' + x + 'dt' for x in svars]))
     odetemp = odetemp.replace("#<&>ODECALL<&>#", functionstring)
 
@@ -78,20 +78,20 @@ def writeODElib(svars, odeM, jacobian=None, rdict=None, concvect=None,
         # JACOBIAN FUNCTION
         jacobianstring = "def {}(p0, t0, r):\n".format('jacobian')
         # Initialize arguments
-        jacobianstring += "  {} = p0\n".format(', '.join(svars))
-        jacobianstring += "  if not r : r = rates\n\n"
+        jacobianstring += "    {} = p0\n".format(', '.join(svars))
+        jacobianstring += "    if not r : r = rates\n\n"
         for k in sorted(rdict.keys()):
-            jacobianstring += "  {} = r['{}']\n".format(k, k)
+            jacobianstring += "    {} = r['{}']\n".format(k, k)
         jacobianstring += "\n"
 
         # Write the jacobian
-        jacobianstring += "  J = [[[] for i in range(len(p0))] " + \
+        jacobianstring += "    J = [[[] for i in range(len(p0))] " + \
             "for j in range(len(p0))]\n"
 
         vl = len(svars)
         i, j = 0, 0
         for row in jacobian:
-            jacobianstring += "  J[{}][{}] = {}\n".format(i, j, row)
+            jacobianstring += "    J[{}][{}] = {}\n".format(i, j, row)
             if j < vl - 1:
                 j += 1
             else:
@@ -99,10 +99,10 @@ def writeODElib(svars, odeM, jacobian=None, rdict=None, concvect=None,
                 j = 0
 
         if len(svars) == 1:
-            jacobianstring += "  J = J[0]\n"
+            jacobianstring += "    J = J[0]\n"
 
         # return
-        jacobianstring += "  return J"
+        jacobianstring += "    return J"
         odetemp = odetemp.replace("#<&>JACOBIAN<&>#", jacobianstring)
         odetemp = odetemp.replace("#<&>JCALL<&>#", 'Dfun = jacobian')
 
@@ -117,7 +117,7 @@ def writeODElib(svars, odeM, jacobian=None, rdict=None, concvect=None,
     if concvect:
         for e, c in enumerate(concvect):
             if c:
-                concstring += "p0[{}] = {}\n  ".format(e, c)
+                concstring += "p0[{}] = {}\n    ".format(e, c)
     odetemp = odetemp.replace("#<&>DEFAULTCONCENTRATIONS<&>#", concstring)
 
     if filename[-3:] != '.py':

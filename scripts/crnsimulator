@@ -8,16 +8,15 @@
 #
 #
 
-from __future__ import unicode_literals
+from __future__ import print_function
 import os
 import sys
 import imp
 import argparse
 
-from crnsimulator import ReactionGraph
+from crnsimulator import ReactionGraph, __version__
 from crnsimulator.odelib_template import add_integrator_args
-from crnsimulator.crn_parser import parse_crn_string, parse_crn_file
-
+from crnsimulator.crn_parser import parse_crn_string, ParseException
 
 def main(args):
     """Translate a CRN into a system of ODEs. Optional: Simulate ODEs on-the-fly. """
@@ -31,7 +30,16 @@ def main(args):
 
     input_crn = sys.stdin.readlines()
     input_crn = "".join(input_crn)
+
     crn, species = parse_crn_string(input_crn)
+
+    V = []
+    C = []
+    for s in sorted(species):
+        V.append(s)
+        if species[s][0][0] != 'i':
+            raise NotImplementedError
+        C.append(species[s][1])
 
     # Split CRN into irreversible reactions
     new = []
@@ -61,7 +69,7 @@ def main(args):
         # ********************* #
         # PRINT ODE TO TEMPLATE #
         # ..................... #
-        filename, odename = RG.write_ODE_lib(sorted_vars=sorted(RG.species),
+        filename, odename = RG.write_ODE_lib(sorted_vars = V, concvect = C,
                                              jacobian=not args.no_jacobian, filename=filename,
                                              odename=odename)
         print('# Wrote ODE system:', filename)
@@ -91,6 +99,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
+    parser.add_argument('--version', action='version', version='%(prog)s ' + __version__)
     parser.add_argument("--force", action='store_true',
             help="Overwrite existing files")
     parser.add_argument("--dryrun", action='store_true',

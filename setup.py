@@ -11,7 +11,7 @@ with open('README.md') as f:
 with open('LICENSE') as f:
     license = f.read()
 
-version = "0.3"
+version = "0.4"
 
 setup(
     name='crnsimulator',

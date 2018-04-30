@@ -15,6 +15,7 @@ from pyparsing import (Word, Literal, Group, Suppress, Combine, Optional,
                        alphas, nums, alphanums, delimitedList, StringStart, StringEnd, LineEnd,
                        ZeroOrMore, OneOrMore, pythonStyleComment, ParseElementEnhance)
 
+from pyparsing import ParseException
 
 class CRNParseError(Exception):
     pass
@@ -67,11 +68,13 @@ def crn_document_setup(modular=False):
     number = W(nums, nums)
     num_flt = C(number + O(L('.') + number))
     num_sci = C(number + O(L('.') + number) + L('e') + O(L('-') | L('+')) + W(nums))
-    rate = num_sci | num_flt
+    gorf = num_sci | num_flt
 
-    k = G(S('[') + S('k') + S('=') + rate + S(']'))
-    rev_k = G(S('[') + S('kf') + S('=') + rate + S(',') +
-              S('kr') + S('=') + rate + S(']'))
+    k = G(S('[') + S('k') + S('=') + gorf + S(']'))
+    rev_k = G(S('[') + S('kf') + S('=') + gorf + S(',') +
+              S('kr') + S('=') + gorf + S(']'))
+
+    concentration = T(species + S('@') + G(L("initial") | L("i") | L("constant") | L("c")) + G(gorf), 'concentration')
 
     reaction = T(G(O(delimitedList(species, "+"))) +
                  S("->") +
@@ -81,7 +84,7 @@ def crn_document_setup(modular=False):
                      S("<=>") +
                      G(O(delimitedList(species, "+"))) + O(rev_k), 'reversible')
 
-    expr = G(reaction | rev_reaction)
+    expr = G(reaction | rev_reaction | concentration)
 
     if modular:
         module = G(expr + ZeroOrMore(S(";") + expr))
@@ -108,6 +111,10 @@ def post_process(crn):
      - Check if reactions are specified twice
      - Check stochiometry
 
+    Returns:
+        new: the CRN in format [[r],[p],k]
+        species: dictionary species[name]=('initial', float)
+
     """
     def remove_multipliers(species):
         flat = []
@@ -120,9 +127,15 @@ def post_process(crn):
         return flat
 
     new = []
-    species = set()
+    species = dict()
     for line in crn:
-        if len(line) == 3:
+        if line[0] == 'concentration':
+            spe = line[1][0]
+            ini = 'initial' if line[2][0][0] == 'i' else 'constant'
+            num = line[3][0]
+            species[spe] = (ini, float(num))
+            continue
+        elif len(line) == 3:
             # No rate specified
             t, r, p = line
             r = remove_multipliers(r)
@@ -147,8 +160,13 @@ def post_process(crn):
                 raise CRNParseError('Wrong CRN format!')
         else:
             raise CRNParseError('Wrong CRN format!')
-        species = species.union(r).union(p)
-    return new, sorted(list(species))
+        for s in r + p:
+            if s not in species:
+                species[s] = ('initial', 0)
+
+        #species = species.union(r).union(p)
+        #print species
+    return new, species
 
 def parse_crn_file(filename, process=True):
     """Parses a CRN from a file.

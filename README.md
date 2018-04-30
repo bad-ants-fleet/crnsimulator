@@ -44,6 +44,12 @@ You can specify the CRN in a single line:
 $ echo "A+B->2B [k=0.2]; B+C->2C [k=0.4]; C+A->2A" | crnsimulator --p0 A=0.1 B=1e-2 C=1e-3 --t8 10000 -o ozzy --pyplot ozzy.pdf
 ```
 
+You can specify default initial concentrations of species:
+
+```
+$ echo "A @i 0.1; B @i 1e-2; A+B->2B [k=0.2]; B+C->2C [k=0.4]; C+A->2A" | crnsimulator --p0 C=1e-3 --t8 10000 -o ozzy --pyplot ozzy.pdf
+```
+
 ### Using the `crnsimulator` library:
 
 The easiest way to get started is by looking at the crnsimulator script itself.
@@ -86,7 +92,7 @@ $ python setup.py install --user
 ```
   
 ## Version
-0.2
+0.4
 
 ## Complete list of Python dependencies:
 All dependencies are available using `pip`:
