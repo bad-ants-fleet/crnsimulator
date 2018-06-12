@@ -98,41 +98,43 @@ rates = {
 
 def add_integrator_args(parser):
     """ODE integration aruments."""
+    solver = parser.add_argument_group('odeint parameters')
+    plotter = parser.add_argument_group('plotting parameters')
 
-    parser.add_argument("--list", action='store_true',
+    plotter.add_argument("--list", action='store_true',
             help="Print all species and exit.")
 
     # required: simulation time and output settings
-    parser.add_argument("--t0", type=float, default=0, metavar='<flt>',
+    solver.add_argument("--t0", type=float, default=0, metavar='<flt>',
             help="First time point of the time-course.")
-    parser.add_argument("--t8", type=float, default=100000, metavar='<flt>',
+    solver.add_argument("--t8", type=float, default=100000, metavar='<flt>',
             help="End point of simulation time.")
-    parser.add_argument("--t-lin", type=int, default=50000, metavar='<int>',
+    plotter.add_argument("--t-lin", type=int, default=50000, metavar='<int>',
             help="Returns --t-lin evenly spaced numbers on a linear scale from --t0 to --t8.")
-    parser.add_argument("--t-log", type=int, default=None, metavar='<int>',
+    plotter.add_argument("--t-log", type=int, default=None, metavar='<int>',
             help="Returns --t-log evenly spaced numbers on a logarithmic scale from --t0 to --t8.")
 
     # required: initial concentration vector
-    parser.add_argument("--p0", nargs='+', metavar='<int/str>=<flt>',
+    solver.add_argument("--p0", nargs='+', metavar='<int/str>=<flt>',
             help="""Vector of initial species concentrations. 
             E.g. \"--p0 1=0.5 3=0.7\" stands for 1st species at a concentration of 0.5 
             and 3rd species at a concentration of 0.7. You may chose to address species
             directly by name, e.g.: --p0 C=0.5.""")
 
     # optional: choose output formats
-    parser.add_argument("--nxy", action='store_true',
-            help="Print time course in nxy format.")
-    parser.add_argument("--pyplot", default='', metavar='<str>',
+    plotter.add_argument("--nxy", action='store_true',
+            help="Print time course to STDOUT in nxy format.")
+    plotter.add_argument("--pyplot", default='', metavar='<str>',
             help="Specify a filename to plot the ODE simulation.")
-    parser.add_argument("--pyplot-labels", nargs='+', default=[], metavar='<str>+',
+    plotter.add_argument("--pyplot-labels", nargs='+', default=[], metavar='<str>+',
             help="Specify the species which should appear in the pyplot legend.")
 
     # advanced: scipy.integrate.odeint parameters
-    parser.add_argument("-a", "--atol", type=float, default=None, metavar='<flt>',
+    solver.add_argument("-a", "--atol", type=float, default=None, metavar='<flt>',
             help="Specify absolute tolerance for the solver.")
-    parser.add_argument("-r", "--rtol", type=float, default=None, metavar='<flt>',
+    solver.add_argument("-r", "--rtol", type=float, default=None, metavar='<flt>',
             help="Specify relative tolerance for the solver.")
-    parser.add_argument("--mxstep", type=int, default=0, metavar='<int>',
+    solver.add_argument("--mxstep", type=int, default=0, metavar='<int>',
             help="Maximum number of steps allowed for each integration point in t.")
 
     return
