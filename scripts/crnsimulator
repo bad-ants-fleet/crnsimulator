@@ -18,8 +18,15 @@ from crnsimulator import ReactionGraph, __version__
 from crnsimulator.odelib_template import add_integrator_args
 from crnsimulator.crn_parser import parse_crn_string, ParseException
 
+class SimulationSetupError(Exception):
+    pass
+
 def main(args):
-    """Translate a CRN into a system of ODEs. Optional: Simulate ODEs on-the-fly. """
+    """Translate a CRN into an ODE system. 
+
+    Optional: Simulate ODEs on-the-fly.
+    
+    """
 
     # ********************* #
     # ARGUMENT PROCESSING 1 #
@@ -31,15 +38,39 @@ def main(args):
     input_crn = sys.stdin.readlines()
     input_crn = "".join(input_crn)
 
-    crn, species = parse_crn_string(input_crn)
+    try:
+        crn, species = parse_crn_string(input_crn)
+    except ParseException as ex:
+        print('CRN-format parsing error:')
+        print('Cannot parse line {:5d}: "{}"'.format(ex.lineno, ex.line))
+        print('                          {} '.format(' ' * (ex.col-1) + '^'))
+        raise SystemExit
 
-    V = []
-    C = []
+
+    V = [] # sorted species (vertices) vector
+    C = [] # corresponding concentration vector
+    seen = set() # keep track of what species are covered
+
+    # Move interesting species to the front, in the given order.
+    labels = args.pyplot_labels
+    for s in labels:
+        if s in seen :
+            raise SimulationSetupError('Multiple occurances of {} in labels.'.format(s))
+        V.append(s)
+
+        if species[s][0][0] != 'i': 
+            raise NotImplementedError('Concentrations must be given as "initial" concentrations.')
+        C.append(species[s][1])
+        seen.add(s)
+
+    # Append the remaining specified species 
     for s in sorted(species):
+        if s in seen : continue
         V.append(s)
         if species[s][0][0] != 'i':
-            raise NotImplementedError
+            raise NotImplementedError('Concentrations must be given as "initial" concentrations.')
         C.append(species[s][1])
+        seen.add(s)
 
     # Split CRN into irreversible reactions
     new = []
@@ -58,13 +89,17 @@ def main(args):
     # **************** #
     # WRITE ODE SYSTEM #
     # ................ #
-    if not args.force and os.path.exists(args.output):
-        print('# Reading ODE system from existing file:', args.output)
+    if not args.force and os.path.exists(filename):
+        print('# Reading ODE system from existing file:', filename)
     else:
         # ******************* #
         # BUILD REACTIONGRAPH #
         # ................... #
         RG = ReactionGraph(crn)
+        if len(RG.species) != len(V):
+            print(len(V), sorted(V))
+            print(len(RG.species), sorted(RG.species))
+            raise SimulationSetupError('Confusion about which species appear in the reaction network!')
 
         # ********************* #
         # PRINT ODE TO TEMPLATE #

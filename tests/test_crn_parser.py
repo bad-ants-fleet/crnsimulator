@@ -8,7 +8,6 @@ import unittest
 from pyparsing import ParseException
 from crnsimulator.crn_parser import parse_crn_string
 
-
 class TestCRNparser(unittest.TestCase):
 
     def test_concentration_specs(self):
@@ -55,7 +54,19 @@ class TestCRNparser(unittest.TestCase):
         self.assertEqual(o1, output_processed1)
         self.assertEqual(o2, output_processed2)
 
-
+    def test_float_examples(self):
+        input_string = """
+        # Comment
+        A + B -> C [k = 0.32]
+        """
+        output_unprocessed = [['irreversible', [['A'], ['B']], [['C']]]]
+        output_processed1 = [[['A', 'B'], ['C'], ['0.32']]]
+        output_processed2 = {'A' : ('initial', 0),
+                             'B' : ('initial', 0),
+                             'C' : ('initial', 0)}
+        # print parse_crn_string(input_string, process=False)
+        # print parse_crn_string(input_string)
+ 
     def test_parse_examples(self):
         input_string = """
         # Comment

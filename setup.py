@@ -1,33 +1,31 @@
 #!/usr/bin/env python
 
-# Python 3 compatibility
-from __future__ import absolute_import
-
 from setuptools import setup, find_packages
 
-with open('README.md') as f:
-    readme = f.read()
-
-with open('LICENSE') as f:
-    license = f.read()
-
-version = "0.4"
+LONG_DESCRIPTION = """
+Simulate chemical recation networks (CRNs) using ordinary differential
+equations (ODEs).
+"""
 
 setup(
     name='crnsimulator',
-    version=version,
+    version="0.5",
     description='Simulate CRNs using ODEs.',
-    long_description=readme,
+    long_description=LONG_DESCRIPTION,
     author='Stefan Badelt',
     author_email='badelt@caltech.edu',
     url='https://github.com/bad-ants-fleet/crnsimulator',
-    license=license,
+    license='MIT',
     install_requires=[
-        'sympy>=0.7.6.1',
-        'matplotlib',
         'scipy>=0.16.1',
+        'sympy>=0.7.6.1',
+        'pyparsing',
+        'numpy',
+        'matplotlib',
+        'seaborn',
         'networkx>=1.1'],
     test_suite='tests',
     packages=['crnsimulator'],
     scripts=['scripts/crnsimulator']
 )
+
