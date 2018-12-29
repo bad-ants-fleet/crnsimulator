@@ -15,8 +15,15 @@ setup(
     author='Stefan Badelt',
     author_email='badelt@caltech.edu',
     url='https://github.com/bad-ants-fleet/crnsimulator',
+    download_url = 'https://github.com/bad-ants-fleet/crnsimulator/archive/v0.5.tar.gz',
     license='MIT',
+    classifiers=[
+        'Development Status :: 3 - Alpha',
+        'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3',
+        ],
     install_requires=[
+        'future',
         'scipy>=0.16.1',
         'sympy>=0.7.6.1',
         'pyparsing',
@@ -24,8 +31,8 @@ setup(
         'matplotlib',
         'seaborn',
         'networkx>=1.1'],
-    test_suite='tests',
     packages=['crnsimulator'],
-    scripts=['scripts/crnsimulator']
+    scripts=['scripts/crnsimulator'],
+    test_suite='tests'
 )
 
