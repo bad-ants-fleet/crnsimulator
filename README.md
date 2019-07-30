@@ -70,21 +70,20 @@ However, here is a small example using the above oscillating CRN.
             [['C', 'A'],['A','A'],0.9]]
 >>> RG = ReactionGraph(crn)
 >>> filename, odename = RG.write_ODE_lib(filename='ozzy.py')
->>> print 'Wrote ODE system file:', filename
+>>> print('Wrote ODE system file:', filename)
 Wrote ODE system file: ozzy.py
 ```
 
 Then go ahead and execute `ozzy.py`
 ```sh
-~$ python ./ozzy.py --p0 1=1e-6 2=2e-6 3=5e-6
+~$ python ./ozzy.py --p0 1=1e-6 2=2e-6 3=5e-6 --t8 1e8 --pyplot ozzy.pdf
 ```
 
 ... or load it as python library.
 
 ```py
->>> import imp
->>> _temp = imp.load_source(odename, filename)
->>> integrate = getattr(_temp, 'integrate')
+>>> from crnsimulator import get_integrator
+>>> integrate = get_integrator(odename, filename)
 >>> integrate(args) # args = <argparse.ArgumentParser()>
 ```
 
@@ -100,5 +99,5 @@ Then go ahead and execute `ozzy.py`
 ```
   
 ## Version
-0.5
+0.6
 

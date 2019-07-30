@@ -11,6 +11,22 @@ from builtins import str
 from builtins import range
 import crnsimulator.odelib_template
 
+def get_integrator(odename, filename):
+    """Workaround to avoid deprecation warnings for the imp module.
+    """
+    try: # Python 3.7
+        import types
+        import importlib.machinery
+
+        loader = importlib.machinery.SourceFileLoader(odename, filename)
+        mod = types.ModuleType(loader.name)
+        loader.exec_module(mod)
+
+        return getattr(mod, 'integrate')
+    except ImportError as err: # Python 2.7
+        import imp
+        _temp = imp.load_source(odename, filename)
+        return getattr(_temp, 'integrate')
 
 def writeODElib(svars, odeM, jacobian=None, rdict=None, concvect=None,
                 odename='odesystem', filename='./odesystem', template=None):

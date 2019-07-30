@@ -9,7 +9,7 @@ equations (ODEs).
 
 setup(
     name='crnsimulator',
-    version="0.5",
+    version="0.6",
     description='Simulate CRNs using ODEs.',
     long_description=LONG_DESCRIPTION,
     author='Stefan Badelt',

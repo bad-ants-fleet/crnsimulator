@@ -1,10 +1,10 @@
 from __future__ import unicode_literals
 
 import os
-import imp
 import unittest
 from argparse import ArgumentParser
 
+from crnsimulator import get_integrator
 from crnsimulator.reactiongraph import ReactionGraph, ReactionNode
 from crnsimulator.crn_parser import parse_crn_string
 from crnsimulator.odelib_template import add_integrator_args
@@ -46,8 +46,7 @@ class testSolver(unittest.TestCase):
         RG = ReactionGraph(crn)
 
         filename, odename = RG.write_ODE_lib(filename=self.filename)
-        _temp = imp.load_source(odename, filename)
-        integrate = getattr(_temp, 'integrate')
+        integrate = get_integrator(odename, filename)
 
         self.args.p0 = ['1=0.5']
         self.args.t_log = 10
@@ -86,8 +85,7 @@ class testSolver(unittest.TestCase):
         RG = ReactionGraph(crn)
 
         filename, odename = RG.write_ODE_lib(filename=self.filename)
-        _temp = imp.load_source(odename, filename)
-        integrate = getattr(_temp, 'integrate')
+        integrate = get_integrator(odename, filename)
 
         self.args.p0 = ['S=0.5', 'cos=0.2']
         self.args.t_log = 10

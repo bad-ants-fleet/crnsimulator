@@ -7,14 +7,13 @@
 # Use at your own risk.
 #
 #
+from __future__ import absolute_import, division, print_function
 
-from __future__ import print_function
 import os
 import sys
-import imp
 import argparse
 
-from crnsimulator import ReactionGraph, __version__
+from crnsimulator import ReactionGraph, get_integrator, __version__
 from crnsimulator.odelib_template import add_integrator_args
 from crnsimulator.crn_parser import parse_crn_string, ParseException
 
@@ -89,7 +88,7 @@ def main(args):
     # **************** #
     # WRITE ODE SYSTEM #
     # ................ #
-    if not args.force and os.path.exists(filename):
+    if filename != 'odesystem.py' and not args.force and os.path.exists(filename):
         print('# Reading ODE system from existing file:', filename)
     else:
         # ******************* #
@@ -119,8 +118,7 @@ def main(args):
         print('# Simulating the ODE system, change parameters using:')
         print("#  python {} --help ".format(filename))
 
-        _temp = imp.load_source(odename, filename)
-        integrate = getattr(_temp, 'integrate')
+        integrate = get_integrator(odename, filename)
 
         # ********************* #
         # ARGUMENT PROCESSING 2 #
