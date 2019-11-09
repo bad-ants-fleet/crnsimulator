@@ -7,15 +7,17 @@
 #
 #
 
-from builtins import zip
-from builtins import str
-from builtins import map
-from builtins import range
-from builtins import object
 import networkx as nx
+from typing import Dict, List, Tuple, Sequence, TypeVar, Union
 from sympy import sympify, Matrix, Symbol
 
 from crnsimulator.solver import writeODElib
+
+# Typehintsh
+SPE = List[str]
+RXN = Tuple[SPE, SPE, str]
+CRN = List[RXN]
+sM = TypeVar('sympy.Matrix')
 
 
 class CRNSimulatorError(Exception):
@@ -26,35 +28,20 @@ class CRNSimulatorError(Exception):
 class ReactionNode(object):
     """A Reaction-Node in the ReactionGraph class. """
     rid = 0
-
-    def __init__(self, prefix='RXN:'):
-        self._name = prefix + str(ReactionNode.rid)
+    def __init__(self, prefix: str = 'RXN:'):
+        self.name = prefix + str(ReactionNode.rid)
         ReactionNode.rid += 1
-
-    @property
-    def name(self):
-        return self._name
-
 
 class ReactionGraph(object):
     """Basic Reaction Graph Object. """
 
-    def __init__(self, crn=None, nxgraph=None):
+    def __init__(self, crn: CRN = None):
         self._RG = nx.MultiDiGraph()
-        if crn:
-            self.add_reactions(crn)
-        elif nxgraph:
-            raise CRNSimulatorError(
-                'Initialization from Graph is not implemented.')
-            self._RG = nx.MultiDiGraph(nxgraph)
-            self._rnode = lambda g_n: g_n[0].g_n[1]
-            self._rates = lambda g_n1: g_n1[0].g_n1[1]
-            self._exclude = lambda g_n2: g_n2[0].g_n2[1]
-            self._rename = None
+        if crn: self.add_reactions(crn)
 
-    #@property
-    # def reactions(self):
-    #  return [n for n in self._RG.nodes() if isinstance(n, ReactionNode)]
+    @property
+    def reactions(self):
+        return [n for n in self._RG.nodes() if isinstance(n, ReactionNode)]
 
     @property
     def species(self):
@@ -70,20 +57,37 @@ class ReactionGraph(object):
         return [n for n in self._RG.nodes() if not isinstance(n, ReactionNode)
                 and self._RG.in_edges(n)]
 
-    def write_ODE_lib(self, sorted_vars=None, concvect=None, jacobian=False, rate_dict=False,
-                      odename='odesystem', filename='./odesystem', template=None):
+    def write_ODE_lib(self, 
+            sorted_vars: List[str] = None, 
+            concvect: List[float] = None, 
+            jacobian: bool = False, 
+            rate_dict: bool = False,
+            odename: str = 'odesystem', 
+            filename: str = './odesystem', 
+            template: str = None):
+        """
+        Produce ODE system, load a template file and write an executable python script.
+        """
 
-        if concvect:
-            assert len(concvect) == len(sorted_vars)
+        if concvect and len(concvect) != len(sorted_vars):
+            raise CRNSimulatorError('Concentrations cannot be mapped to species!')
 
-        V, M, J, R = self.ode_system(
-            sorted_vars=sorted_vars, jacobian=jacobian, rate_dict=rate_dict)
+        V, M, J, R = self.ode_system(sorted_vars = sorted_vars, 
+                                     jacobian = jacobian, 
+                                     rate_dict = rate_dict)
 
-        return writeODElib(V, M, jacobian=J, rdict=R, concvect=concvect,
-                           odename=odename, filename=filename, template=None)
+        return writeODElib(V, M, jacobian = J, rdict = R, concvect = concvect,
+                           odename = odename, filename = filename, template = None)
 
-    def ode_system(self, sorted_vars=None, jacobian=False, rate_dict=False):
-        odict, rdict = self.get_odes(rate_dict=rate_dict)
+    def ode_system(self, 
+            sorted_vars: List[str] = None, 
+            jacobian: bool = False, 
+            rate_dict: bool = False) -> Tuple[List[str], 
+                                              sM, 
+                                              Union[sM, None], 
+                                              Union[Dict[str, str], None]]:
+
+        odict, R = self.get_odes(rate_dict = rate_dict)
 
         if sorted_vars:
             sorted_vars = list(map(Symbol, sorted_vars))
@@ -115,25 +119,21 @@ class ReactionGraph(object):
         else:
             J = None
 
-        return sorted_vars, M, J, rdict
+        return sorted_vars, M, J, R 
 
-    def get_odes(self, rate_dict=False):
+    def get_odes(self, rate_dict: bool = False) -> Tuple[
+            Dict[str, List[str]], Union[Dict[str, str], None]]:
         """Translate the reaction graph into ODEs.
-
-        Returns:
-          sympy.Symbols
-
         """
         rdict = dict()
         odes = dict()
-        for rxn in self._RG.nodes():
-            if not isinstance(rxn, ReactionNode):
-                continue
+
+        for rxn in self.reactions:
             if rate_dict:
                 rate = 'k' + str(len(list(rdict.keys())))
-                rdict[rate] = self._RG.node[rxn]['rate']
+                rdict[rate] = self._RG.nodes[rxn]['rate']
             else:
-                rate = str(self._RG.node[rxn]['rate'])
+                rate = str(self._RG.nodes[rxn]['rate'])
 
             reactants = []
             for reac in self._RG.predecessors(rxn):
@@ -159,24 +159,30 @@ class ReactionGraph(object):
 
         return odes, rdict
 
-    def add_reactions(self, crn):
+    def add_reactions(self, crn: CRN) -> None:
         assert isinstance(crn, list)
         for rxn in crn:
             self.add_reaction(rxn)
-        return
 
-    def add_reaction(self, rxn):
+    def add_reaction(self, rxn: RXN) -> None:
         assert len(rxn) == 3
         n = ReactionNode()
-        # sometimes the format is [[react],[prod], [k]],
-        # sometimes it is [[react],[prod], k]
-        rxn[2] = rxn[2] if not isinstance(rxn[2], list) else rxn[2][0]
-        self._RG.add_node(n, rate=rxn[2])
+
+        if isinstance(rxn[2], list):
+            # TODO: for now it is ok, but maybe we should enforce a consistent format here.
+            #
+            # sometimes the format is [[react],[prod], [k]],
+            # sometimes it is [[react],[prod], k]
+            #
+            # print(DeprecationWarning('Using deprecated format for irreversible reactions.'))
+            rxn[2] = rxn[2][0]
+
+        self._RG.add_node(n, rate = rxn[2])
         for r in rxn[0]:
-            # breaks with utf-8 strings... unfortunately
-            #assert isinstance(r, str)
+            assert isinstance(r, str)
             self._RG.add_edge(r, n)
         for p in rxn[1]:
-            #assert isinstance(p, str)
+            assert isinstance(p, str)
             self._RG.add_edge(n, p)
+
         return

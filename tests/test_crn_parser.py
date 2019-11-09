@@ -144,6 +144,21 @@ class TestCRNparser(unittest.TestCase):
         o1, o2 = parse_crn_string(input_string)
         self.assertEqual(o1, output_processed1)
 
+        input_string = """
+        # Comment
+        A + B -> C [18]
+        A + B <=> C [99, 77]
+        """
+        output_unprocessed = [['irreversible', [['A'], ['B']], [['C']], ['18']], 
+                              ['reversible', [['A'], ['B']], [['C']], ['99', '77']]]
+        output_processed1 = [[['A', 'B'], ['C'], ['18']], 
+                            [['A', 'B'], ['C'], ['99', '77']]]
+        self.assertEqual(parse_crn_string(input_string, process=False),
+                         output_unprocessed,
+                         'parse reaction unprocessed 5')
+        o1, o2 = parse_crn_string(input_string)
+        self.assertEqual(o1, output_processed1)
+
     def test_multiple_species(self):
         input_string = """5A -> 3B + 2C"""
         output_processed1 = [[['A', 'A', 'A', 'A', 'A'], 

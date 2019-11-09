@@ -70,9 +70,12 @@ def crn_document_setup(modular=False):
     num_sci = C(number + O(L('.') + number) + L('e') + O(L('-') | L('+')) + W(nums))
     gorf = num_sci | num_flt
 
-    k = G(S('[') + S('k') + S('=') + gorf + S(']'))
-    rev_k = G(S('[') + S('kf') + S('=') + gorf + S(',') +
-              S('kr') + S('=') + gorf + S(']'))
+    # Make specification of forward, backward, reverse more flexible
+    kf = S('kf') | S('fw')
+    kr = S('kr') | S('bw') | S('rv')
+
+    k = G(S('[') + O(S('k') + S('=')) + gorf + S(']'))
+    rev_k = G(S('[') + kf + S('=') + gorf + S(',') + kr + S('=') + gorf + S(']')) | G(S('[') + gorf + S(',') + gorf + S(']'))
 
     concentration = T(species + S('@') + G(L("initial") | L("i") | L("constant") | L("c")) + G(gorf), 'concentration')
 

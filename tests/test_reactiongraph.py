@@ -30,6 +30,13 @@ class Test_ReactionGraph(unittest.TestCase):
         self.assertEqual(sorted(RG.reactants), ['A', 'B'])
         self.assertEqual(sorted(RG.products), ['C', 'E'])
 
+        crn = [[['A', 'B', 'B'], ['C'], [5]]]
+        RG = ReactionGraph(crn)
+        self.assertIsInstance(RG, ReactionGraph)
+        self.assertEqual(sorted(RG.species), ['A', 'B', 'C'])
+        self.assertEqual(sorted(RG.reactants), ['A', 'B'])
+        self.assertEqual(sorted(RG.products), ['C'])
+
         # TODO: structure of M and R is variable, cannot check it like this
         # M, R = RG.get_odes()
         # rM = {'A': [['-18', 'A', 'B'], ['-99', 'A']], 'C': [['18', 'A', 'B'], ['99', 'A']], 'B': [['-18', 'A', 'B']], 'E': [['99', 'A']]}

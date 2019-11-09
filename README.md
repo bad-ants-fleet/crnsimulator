@@ -99,5 +99,5 @@ Then go ahead and execute `ozzy.py`
 ```
   
 ## Version
-0.6
+0.7
 
