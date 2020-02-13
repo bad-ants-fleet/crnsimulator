@@ -46,7 +46,7 @@ class testSolver(unittest.TestCase):
         RG = ReactionGraph(crn)
 
         filename, odename = RG.write_ODE_lib(filename=self.filename)
-        integrate = get_integrator(odename, filename)
+        integrate = get_integrator(filename)
 
         self.args.p0 = ['1=0.5']
         self.args.t_log = 10
@@ -85,7 +85,7 @@ class testSolver(unittest.TestCase):
         RG = ReactionGraph(crn)
 
         filename, odename = RG.write_ODE_lib(filename=self.filename)
-        integrate = get_integrator(odename, filename)
+        integrate = get_integrator(filename)
 
         self.args.p0 = ['S=0.5', 'cos=0.2']
         self.args.t_log = 10

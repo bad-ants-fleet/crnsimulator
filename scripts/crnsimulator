@@ -130,7 +130,7 @@ def main(args):
         print('# Simulating the ODE system, change parameters using:')
         print("#  python {} --help ".format(filename))
 
-        integrate = get_integrator(odename, filename)
+        integrate = get_integrator(filename)
 
         # ********************* #
         # ARGUMENT PROCESSING 2 #

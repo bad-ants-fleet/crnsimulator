@@ -26,8 +26,8 @@ import seaborn as sns
 sns.set(style="darkgrid", font_scale=1, rc={"lines.linewidth": 2.0})
 
 
-def ode_plotter(name, t, ny, svars, log=False, labels=None,
-        xlim=None, ylim=None):
+def ode_plotter(name, t, ny, svars, log = False, labels = None,
+        xlim = None, ylim = None, plim = None):
     """ Plots the ODE trajectories.
 
     Args:
@@ -37,6 +37,9 @@ def ode_plotter(name, t, ny, svars, log=False, labels=None,
       svars (list[str]): A list of names for every trajectory in ny
       log (bool,optional): Plot data on a logarithmic time scale
       labels (set(),optional): Define species that appear labelled in the plot
+      xlim ((float,float), optional): matplotlib xlim.
+      ylim ((float,float), optional): matplotlib ylim.
+      plim (float, optional): Minimal occupancy to plot a trajectory. Defaults to None.
 
     Prints:
       A file containing the plot (Format *.pdf, *.png, etc.)
@@ -74,7 +77,7 @@ def ode_plotter(name, t, ny, svars, log=False, labels=None,
                 ax.plot(t, y, '--', lw=0.1, color='gray', zorder=1)
     else:
         for e, y in enumerate(ny):
-            if max(y) > 0.05:
+            if plim is None or max(y) > plim:
                 ax.plot(t, y, '-', label=svars[e])
             else:
                 ax.plot(t, y, '--', lw=0.1, color='gray', zorder=1)

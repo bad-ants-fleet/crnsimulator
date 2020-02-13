@@ -8,17 +8,18 @@ equations (ODEs).
 
 Create a test file with your CRN:
 
-File: ozzy.crn
+File: [oscillator.crn]
 ```
-# Oscillator Test
+# Rock-Paper-Scissors Oscillator
+
 A + B -> B + B [k = 0.2]
-B + C -> C + C [k = 0.3]
-C + A -> A + A [k = 1]
+B + C -> C + C [k = 0.4]
+C + A -> A + A [k = 0.7]
 ```
 
 And pipe it into the crnsimulator:
 ```sh
-~$ crnsimulator -o ozzy < ozzy.crn
+~$ crnsimulator -o ozzy < oscillator.crn
 ```
 This writes the ODE system to an executable python script: `ozzy.py`
 
@@ -35,7 +36,7 @@ You can pass the command line options for ozzy.py directly to `crnsimulator`.
 This will automatically simulate your ODE system. Use --force to overwrite an
 existing `ozzy.py` script.
 ```sh
-~$ crnsimulator --p0 A=0.1 B=1e-2 C=1e-3 --t8 10000 -o ozzy --pyplot ozzy.pdf < ozzy.crn
+~$ crnsimulator --p0 A=0.1 B=1e-2 C=1e-3 --t8 10000 -o ozzy --pyplot ozzy.pdf < oscillator.crn
 ```
 
 You can specify the CRN in a single line:
@@ -69,21 +70,38 @@ However, here is a small example using the above oscillating CRN.
             [['B', 'C'],['C','C'],0.8],
             [['C', 'A'],['A','A'],0.9]]
 >>> RG = ReactionGraph(crn)
->>> filename, odename = RG.write_ODE_lib(filename='ozzy.py')
+>>> svars = ['B', 'C', 'A'] # let's enforce the order of species, because we can!
+>>> filename, odename = RG.write_ODE_lib(filename='ozzy.py', sorted_vars = svars)
 >>> print('Wrote ODE system file:', filename)
 Wrote ODE system file: ozzy.py
 ```
 
-Then go ahead and execute `ozzy.py`
+Then go ahead and execute `ozzy.py`:
 ```sh
-~$ python ./ozzy.py --p0 1=1e-6 2=2e-6 3=5e-6 --t8 1e8 --pyplot ozzy.pdf
+~$ python ./ozzy.py --p0 1=1e-6 2=2e-6 3=5e-6 --t8 1e8 --pyplot ozzy.pdf --atol 1e-10 --rtol 1e-10
 ```
 
-... or load it as python library.
+... or load its functions by treating it as a python library:
 
 ```py
+# Import
+>>> import numpy as np
+>>> from scipy.integrate import odeint
 >>> from crnsimulator import get_integrator
->>> integrate = get_integrator(odename, filename)
+>>> odesys = get_integrator(filename, function = odename)
+>>> odeplt = get_integrator(filename, function = 'ode_plotter')
+# Simulate
+>>> p0 = [1e-6, 2e-6, 5e-6] # order of svars
+>>> time = np.linspace(0, 1e8, num = 10_000)
+>>> ny = odeint(odesys, p0, time, (None,), atol = 1e-10, rtol = 1e-10).T
+# Plot
+>>> odeplt(`ozzy.pdf`, time, ny, svars)
+```
+
+... or include the prebuilt integrator in you own script (like the crnsimulator exectuable):
+```py
+>>> from crnsimulator import get_integrator
+>>> integrate = get_integrator(filename)
 >>> integrate(args) # args = <argparse.ArgumentParser()>
 ```
 
@@ -92,12 +110,8 @@ Then go ahead and execute `ozzy.py`
 ```sh
 ~$ python setup.py install
 ```
-
-### local installation
-```sh
-~$ python setup.py install --user
-```
   
 ## Version
-0.7
+0.7.1
 
+[oscillator.crn]: <https://github.com/bad-ants-fleet/crnsimulator/blob/master/tests/crns/oscillator.crn>
