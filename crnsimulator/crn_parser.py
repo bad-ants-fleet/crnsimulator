@@ -100,7 +100,7 @@ def crn_document_setup(modular=False):
     document.ignore(pythonStyleComment)
     return document
 
-def post_process(crn):
+def post_process(crn, defaultrate = None, defaultmode = 'initial', defaultconc = 0):
     """Process a parsed CRN.
 
     Does:
@@ -144,9 +144,9 @@ def post_process(crn):
             r = remove_multipliers(r)
             p = remove_multipliers(p)
             if t == 'reversible':
-                new.append([r, p, [None, None]])
+                new.append([r, p, [defaultrate, defaultrate]])
             elif t == 'irreversible':
-                new.append([r, p, [None]])
+                new.append([r, p, [defaultrate]])
             else:
                 raise CRNParseError('Wrong CRN format!')
         elif len(line) == 4:
@@ -165,13 +165,11 @@ def post_process(crn):
             raise CRNParseError('Wrong CRN format!')
         for s in r + p:
             if s not in species:
-                species[s] = ('initial', 0)
+                species[s] = (defaultmode, defaultconc)
 
-        #species = species.union(r).union(p)
-        #print species
     return new, species
 
-def parse_crn_file(filename, process=True):
+def parse_crn_file(filename, process = True, **kwargs):
     """Parses a CRN from a file.
 
     Args:
@@ -186,11 +184,11 @@ def parse_crn_file(filename, process=True):
     crn_document = crn_document_setup()
     if process:
         return post_process(crn_document.parseFile(
-            filename, parseAll=True).asList())
+            filename, parseAll=True).asList(), **kwargs)
     else:
         return crn_document.parseFile(filename, parseAll=True).asList()
 
-def parse_crn_string(data, process=True):
+def parse_crn_string(data, process = True, **kwargs):
     """Parses a CRN from a string.
 
     Args:
@@ -204,7 +202,7 @@ def parse_crn_string(data, process=True):
     """
     crn_document = crn_document_setup()
     if process:
-        return post_process(crn_document.parseString(data).asList())
+        return post_process(crn_document.parseString(data).asList(), **kwargs)
     else:
         return crn_document.parseString(data).asList()
 

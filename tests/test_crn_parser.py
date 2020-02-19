@@ -77,6 +77,10 @@ class TestCRNparser(unittest.TestCase):
         output_processed2 = {'A' : ('initial', 0),
                              'B' : ('initial', 0),
                              'C' : ('initial', 0)}
+        output_processed3 = [[['A', 'B'], ['C'], [1]]]
+        output_processed4 = {'A' : (None, None),
+                             'B' : (None, None),
+                             'C' : (None, None)}
         # print parse_crn_string(input_string, process=False)
         # print parse_crn_string(input_string)
         self.assertEqual(parse_crn_string(input_string, process=False), 
@@ -85,6 +89,10 @@ class TestCRNparser(unittest.TestCase):
         o1, o2 = parse_crn_string(input_string)
         self.assertEqual(o1, output_processed1)
         self.assertEqual(o2, output_processed2)
+
+        o3, o4 = parse_crn_string(input_string, process = True, defaultrate = 1, defaultmode = None, defaultconc = None)
+        self.assertEqual(o3, output_processed3)
+        self.assertEqual(o4, output_processed4)
 
         input_string = """A + B -> C [k = 10.8]"""
         output_unprocessed = [['irreversible', [['A'], ['B']], [['C']], ['10.8']]]
