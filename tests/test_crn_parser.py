@@ -167,6 +167,14 @@ class TestCRNparser(unittest.TestCase):
         o1, o2 = parse_crn_string(input_string)
         self.assertEqual(o1, output_processed1)
 
+        input_string = "A + B -> C + X [0.48]; X + A <=> C + L [0.89, 0.87]"
+        exp1 = [[['A', 'B'], ['C', 'X'], ['0.48']], [['X', 'A'], ['C', 'L'], ['0.89', '0.87']]]
+        exp2 = {'A': ('initial', 0), 'B': ('initial', 0), 'C': ('initial', 0), 'X': ('initial', 0), 'L': ('initial', 0)}
+
+        o1, o2 = parse_crn_string(input_string)
+        self.assertEqual(o1, exp1)
+
+
     def test_multiple_species(self):
         input_string = """5A -> 3B + 2C"""
         output_processed1 = [[['A', 'A', 'A', 'A', 'A'], 

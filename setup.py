@@ -2,10 +2,8 @@
 
 from setuptools import setup, find_packages
 
-LONG_DESCRIPTION = """
-Simulate chemical recation networks (CRNs) using ordinary differential
-equations (ODEs).
-"""
+with open("README.md", "r") as fh:
+    LONG_DESCRIPTION = fh.read()
 
 setup(
     name = 'crnsimulator',
@@ -18,9 +16,10 @@ setup(
     download_url = 'https://github.com/bad-ants-fleet/crnsimulator/archive/v0.7.1.tar.gz',
     license = 'MIT',
     classifiers = [
-        'Development Status :: 3 - Alpha',
+        'Development Status :: 4 - Beta',
         'Programming Language :: Python :: 3.7',
         ],
+    test_suite='tests',
     install_requires = [
         'scipy>=0.16.1',
         'sympy>=0.7.6.1',
@@ -30,7 +29,10 @@ setup(
         'seaborn',
         'networkx>=2.2'],
     packages = ['crnsimulator'],
-    scripts = ['scripts/crnsimulator'],
-    test_suite='tests'
+    entry_points = {
+        'console_scripts': [
+            'crnsimulator=crnsimulator.simulator:main'
+            ],
+        }
 )
 

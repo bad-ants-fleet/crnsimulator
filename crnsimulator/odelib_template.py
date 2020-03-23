@@ -7,7 +7,6 @@
 #
 # Use at your own risk.
 #
-#
 
 #
 # If this file is executable, it contains a system of hardcoded ODEs together
@@ -27,7 +26,7 @@ sns.set(style="darkgrid", font_scale=1, rc={"lines.linewidth": 2.0})
 
 
 def ode_plotter(name, t, ny, svars, log = False, labels = None,
-        xlim = None, ylim = None, plim = None):
+        xlim = None, ylim = None, plim = None, labels_strict = False):
     """ Plots the ODE trajectories.
 
     Args:
@@ -40,6 +39,7 @@ def ode_plotter(name, t, ny, svars, log = False, labels = None,
       xlim ((float,float), optional): matplotlib xlim.
       ylim ((float,float), optional): matplotlib ylim.
       plim (float, optional): Minimal occupancy to plot a trajectory. Defaults to None.
+      labels_strict (bool, optional): Only print labels that were specified using labels.
 
     Prints:
       A file containing the plot (Format *.pdf, *.png, etc.)
@@ -73,7 +73,7 @@ def ode_plotter(name, t, ny, svars, log = False, labels = None,
             if svars[e] in labels:
                 ax.plot(t, y, '-', label=svars[e], color=mycolors[i])
                 i = i + 1 if i < len(mycolors) - 1 else 0
-            else:
+            elif not labels_strict:
                 ax.plot(t, y, '--', lw=0.1, color='gray', zorder=1)
     else:
         for e, y in enumerate(ny):
@@ -119,9 +119,6 @@ def add_integrator_args(parser):
     solver = parser.add_argument_group('odeint parameters')
     plotter = parser.add_argument_group('plotting parameters')
 
-    plotter.add_argument("--list", action='store_true',
-            help="Print all species and exit.")
-
     # required: simulation time and output settings
     solver.add_argument("--t0", type=float, default=0, metavar='<flt>',
             help="First time point of the time-course.")
@@ -138,21 +135,6 @@ def add_integrator_args(parser):
             E.g. \"--p0 1=0.5 3=0.7\" stands for 1st species at a concentration of 0.5 
             and 3rd species at a concentration of 0.7. You may chose to address species
             directly by name, e.g.: --p0 C=0.5.""")
-
-    # optional: choose output formats
-    plotter.add_argument("--nxy", action='store_true',
-            help="Print time course to STDOUT in nxy format.")
-    plotter.add_argument("--header", action='store_true',
-            help="Print header for trajectories.")
-    plotter.add_argument("--pyplot", default='', metavar='<str>',
-            help="Specify a filename to plot the ODE simulation.")
-    plotter.add_argument("--pyplot-labels", nargs='+', default=[], metavar='<str>+',
-            help="Specify the species which should appear in the pyplot legend.")
-    plotter.add_argument("--pyplot-xlim", nargs=2, type=float, default=None, metavar='<flt>',
-            help="Specify the limits of the x-axis.")
-    plotter.add_argument("--pyplot-ylim", nargs=2, type=float, default=None, metavar='<flt>',
-            help="Specify the limits of the y-axis.")
-
     # advanced: scipy.integrate.odeint parameters
     solver.add_argument("-a", "--atol", type=float, default=None, metavar='<flt>',
             help="Specify absolute tolerance for the solver.")
@@ -161,6 +143,29 @@ def add_integrator_args(parser):
     solver.add_argument("--mxstep", type=int, default=0, metavar='<int>',
             help="Maximum number of steps allowed for each integration point in t.")
 
+    # optional: choose output formats
+    plotter.add_argument("--list-labels", action='store_true',
+            help="Print all species and exit.")
+    plotter.add_argument("--labels", nargs='+', default=[], metavar='<str>+',
+            help="""Specify the (order of) species which should appear in the pyplot legend, 
+            as well as the order of species for nxy output format.""")
+    plotter.add_argument("--labels-strict", action='store_true',
+            help="""When using pyplot, only plot tracjectories corresponding to labels,
+            when using nxy, only print the trajectories corresponding to labels.""")
+ 
+    plotter.add_argument("--nxy", action='store_true',
+            help="Print time course to STDOUT in nxy format.")
+    plotter.add_argument("--header", action='store_true',
+            help="Print header for trajectories.")
+
+    plotter.add_argument("--pyplot", default='', metavar='<str>',
+            help="Specify a filename to plot the ODE simulation.")
+    plotter.add_argument("--pyplot-xlim", nargs=2, type=float, default=None, metavar='<flt>',
+            help="Specify the limits of the x-axis.")
+    plotter.add_argument("--pyplot-ylim", nargs=2, type=float, default=None, metavar='<flt>',
+            help="Specify the limits of the y-axis.")
+    plotter.add_argument("--pyplot-labels", nargs='+', default=[], metavar='<str>+',
+            help=argparse.SUPPRESS)
     return
 
 
@@ -179,14 +184,18 @@ def integrate(args):
     Returns:
       Nothing
     """
+    if args.pyplot_labels:
+        print('WARNING: Using DEPRECATED Argument: --pyplot_labels.')
 
     #<&>SORTEDVARS<&>#
 
     p0 = [0] * len(svars)
     #<&>DEFAULTCONCENTRATIONS<&>#
 
-    if args.list:
+    if args.list_labels:
         for e, v in enumerate(svars, 1):
+            if args.labels_strict and e > len(args.labels):
+                break
             print('# {} {}'.format(e, v))
         raise SystemExit('# Specify a vector of initial concentrations: ' +
                 'e.g. --p0 1=0.1 2=0.005 3=1e-6 (see --help)')
@@ -226,16 +235,21 @@ def integrate(args):
         print('# Initial concentrations:', list(zip(svars, p0)))
         p0 = np.array(p0)
 
-    # TODO: It would be nice if it is possible to read alternative rates from a file instead.
-    # None triggers the default-rates that are hard-coded in the (this)
-    # library file.
+    # It would be nice if it is possible to read alternative rates from a file instead.
+    # None triggers the default-rates that are hard-coded in the (this) library file.
     rates = None
 
     ny = odeint(#<&>ODENAME<&>#,
         p0, time, (rates, ), #<&>JCALL<&>#,
         atol=args.atol, rtol=args.rtol, mxstep=args.mxstep).T
 
-    if args.nxy:
+    if args.nxy and args.labels_strict:
+        end = len(args.labels)
+        if args.header:
+            print(' '.join(['{:15s}'.format(x) for x in ['time'] + svars[:end]]))
+        for i in zip(time, *ny[:end]):
+            print(' '.join(map("{:.9e}".format, i)))
+    elif args.nxy:
         if args.header:
             print(' '.join(['{:15s}'.format(x) for x in ['time'] + svars]))
         for i in zip(time, *ny):
@@ -244,9 +258,10 @@ def integrate(args):
     if args.pyplot:
         plotfile = ode_plotter(args.pyplot, time, ny, svars,
                                log=True if args.t_log else False,
-                               labels=set(args.pyplot_labels),
+                               labels=set(args.labels),
                                xlim = args.pyplot_xlim,
-                               ylim = args.pyplot_ylim)
+                               ylim = args.pyplot_ylim,
+                               labels_strict = args.labels_strict)
         print('# Printed file:', plotfile)
 
     return zip(time, *ny)

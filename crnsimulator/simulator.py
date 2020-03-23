@@ -6,7 +6,7 @@
 #
 # Use at your own risk.
 #
-#
+
 import re
 import os
 import sys
@@ -32,12 +32,35 @@ def natural_sort(l):
 
     return sorted(l, key=alphanum_key)
 
-def main(args):
+def main():
     """Translate a CRN into an ODE system. 
 
     Optional: Simulate ODEs on-the-fly.
     
     """
+
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument('--version', action='version', version='%(prog)s ' + __version__)
+    parser.add_argument("--force", action='store_true',
+            help="Overwrite existing files")
+    parser.add_argument("--dryrun", action='store_true',
+            help="Do not run the simulation, only write the files.")
+    parser.add_argument("-o", "--output", default='odesystem', metavar='<str>',
+            help="Name of ODE library files.")
+    parser.add_argument("--no-jacobian", action='store_true',
+            help=argparse.SUPPRESS)
+    parser.add_argument("--jacobian", action='store_true',
+            help="""Symbolic calculation of Jacobi-Matrix. 
+            This may generate a very large simulation file.""")
+    add_integrator_args(parser)
+    args = parser.parse_args()
+
+    if args.no_jacobian:
+        print('WARNING: Using DEPRECATED Argument: --no-jacobian.')
+    if args.pyplot_labels:
+        print('WARNING: Using DEPRECATED Argument: --pyplot_labels.')
+        args.labels = args.pyplot_labels
 
     # ********************* #
     # ARGUMENT PROCESSING 1 #
@@ -57,13 +80,12 @@ def main(args):
         print('                          {} '.format(' ' * (ex.col-1) + '^'))
         raise SystemExit
 
-
     V = [] # sorted species (vertices) vector
     C = [] # corresponding concentration vector
     seen = set() # keep track of what species are covered
 
     # Move interesting species to the front, in the given order.
-    labels = args.pyplot_labels
+    labels = args.labels
     for s in labels:
         if s in seen :
             raise SimulationSetupError('Multiple occurances of {} in labels.'.format(s))
@@ -116,7 +138,7 @@ def main(args):
         # PRINT ODE TO TEMPLATE #
         # ..................... #
         filename, odename = RG.write_ODE_lib(sorted_vars = V, concvect = C,
-                                             jacobian=not args.no_jacobian, filename=filename,
+                                             jacobian = args.jacobian, filename=filename,
                                              odename=odename)
         print('# Wrote ODE system:', filename)
 
@@ -141,21 +163,5 @@ def main(args):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    main()
 
-    parser.add_argument('--version', action='version', version='%(prog)s ' + __version__)
-    parser.add_argument("--force", action='store_true',
-            help="Overwrite existing files")
-    parser.add_argument("--dryrun", action='store_true',
-            help="Do not run the simulation, only write the files.")
-    parser.add_argument("-o", "--output", default='odesystem', metavar='<str>',
-            help="Name of ODE library files.")
-    parser.add_argument("--no-jacobian", action='store_true',
-            help="Do not compute the Jacobi-Matrix.")
-
-    add_integrator_args(parser)
-
-    args = parser.parse_args()
-
-    main(args)
