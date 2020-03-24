@@ -117,13 +117,13 @@ Then go ahead and execute `ozzy.py`:
 ```
   
 ## Version
-0.8 -- beta status
-    * now using logging
-    * python >= 3.7 only
-    * improved header documentation
-    * using entry_points for crnsimulator script
-    * set defaultrate = 1 (new postprocessing strandard)
-    * new commandline arguments: labels, labels-strict
-    * support the constant concentration flag
+v0.8 -- beta status
+  * now using logging
+  * python >= 3.7 only
+  * improved header documentation
+  * using entry_points for crnsimulator script
+  * set defaultrate = 1 (new postprocessing strandard)
+  * new commandline arguments: labels, labels-strict
+  * support the constant concentration flag
 
 [oscillator.crn]: <https://github.com/bad-ants-fleet/crnsimulator/blob/master/tests/crns/oscillator.crn>
