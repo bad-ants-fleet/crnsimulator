@@ -1,15 +1,12 @@
-#
-# Parser for formal chemical reaction networks.
-#
-# Written by Stefan Badelt (badelt@caltech.edu).
-#
-# This file was adapted from the python package: `Nuskell`
-# Developed at the *DNA and Natural Algorithms Group*, Caltech.
-# originally written by Seung Woo Shin (seungwoo.theory@gmail.com).
-#
-# Use at your own risk.
-#
-#
+"""
+Parser for formal Chemical Reaction Networks.
+
+Note: This file was adapted from the python package: `Nuskell`, which is
+    developed at the *DNA and Natural Algorithms Group*, Caltech.  
+    Original code written by Seung Woo Shin (seungwoo.theory@gmail.com).
+
+Test using tests/test_crn_parser.py.
+"""
 
 from pyparsing import (Word, Literal, Group, Suppress, Combine, Optional,
                        alphas, nums, alphanums, delimitedList, StringStart, StringEnd, LineEnd,
@@ -100,7 +97,7 @@ def crn_document_setup(modular=False):
     document.ignore(pythonStyleComment)
     return document
 
-def post_process(crn, defaultrate = None, defaultmode = 'initial', defaultconc = 0):
+def post_process(crn, defaultrate = 1, defaultmode = 'initial', defaultconc = 0):
     """Process a parsed CRN.
 
     Does:

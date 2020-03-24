@@ -1,10 +1,11 @@
-#
-# CRN-to-MultiDiGraph-to-ODE translation utilities.
-#
-# Written by Stefan Badelt (badelt@caltech.edu).
-#
-# Use at your own risk.
-#
+"""
+Template file processing. Write a ODE system, load it to a script.
+
+Test using tests/test_solver.py.
+"""
+
+import logging
+logger = logging.getLogger(__name__)
 
 import types
 import importlib.machinery
@@ -32,13 +33,13 @@ def get_integrator(filename, function = 'integrate'):
         mod = types.ModuleType(loader.name)
         loader.exec_module(mod)
     except FileNotFoundError as err:
-        print(Warning('DEPRECATED - crnsimulator: Please note that the crnsimulator.solver.get_integrator function interface changed.'))
+        logger.error('Deprecation: Please note that the crnsimulator.solver.get_integrator function interface changed with version >= 0.7.1.')
         raise err
 
     return getattr(mod, function)
 
-def writeODElib(svars, odeM, jacobian=None, rdict=None, concvect=None,
-                odename='odesystem', filename='./odesystem', template=None):
+def writeODElib(svars, odeM, jacobian = None, rdict = None, concvect = None,
+                odename = 'odesystem', filename = './odesystem', template = None):
     """ Write an ODE system into an executable python script.
 
     Args:

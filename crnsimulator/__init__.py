@@ -1,12 +1,11 @@
-#
-# crnsimulator library: simulate chemical reaction networks using ODEs
-#
-# Written by Stefan Badelt (badelt@caltech.edu).
-#
-# Use at your own risk.
-#
-#
+"""
+Simulate formal Chemical Reaction Networks using ODEs (library interface).
+"""
+
 __version__ = "v0.7.1"
+
+import logging
+logging.getLogger(__name__).addHandler(logging.NullHandler())
 
 from crnsimulator.crn_parser import parse_crn_string, parse_crn_file
 from crnsimulator.reactiongraph import ReactionGraph

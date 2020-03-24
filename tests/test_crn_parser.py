@@ -27,7 +27,7 @@ class TestCRNparser(unittest.TestCase):
 
         self.assertEqual(parse_crn_string(input_string, process=False), output_unprocessed)
 
-        output_processed1 = [[['A', 'B'], ['C'], [None]]]
+        output_processed1 = [[['A', 'B'], ['C'], [1]]]
         output_processed2 = {'A' : ('initial', 50),
                              'B' : ('constant', 50),
                              'C' : ('constant', 10)}
@@ -73,7 +73,7 @@ class TestCRNparser(unittest.TestCase):
         A + B -> C
         """
         output_unprocessed = [['irreversible', [['A'], ['B']], [['C']]]]
-        output_processed1 = [[['A', 'B'], ['C'], [None]]]
+        output_processed1 = [[['A', 'B'], ['C'], [1]]]
         output_processed2 = {'A' : ('initial', 0),
                              'B' : ('initial', 0),
                              'C' : ('initial', 0)}
@@ -125,8 +125,8 @@ class TestCRNparser(unittest.TestCase):
         """
         output_unprocessed = [['irreversible', [['A'], ['B']], [['C']]], 
                               ['reversible', [['A'], ['B']], [['C']]]]
-        output_processed1 = [[['A', 'B'], ['C'], [None]], 
-                            [['A', 'B'], ['C'], [None, None]]]
+        output_processed1 = [[['A', 'B'], ['C'], [1]], 
+                            [['A', 'B'], ['C'], [1, 1]]]
         output_processed2 = {'A' : ('initial', 0),
                              'B' : ('initial', 0),
                              'C' : ('initial', 0)}
@@ -178,7 +178,7 @@ class TestCRNparser(unittest.TestCase):
     def test_multiple_species(self):
         input_string = """5A -> 3B + 2C"""
         output_processed1 = [[['A', 'A', 'A', 'A', 'A'], 
-                             ['B', 'B', 'B', 'C', 'C'], [None]]]
+                             ['B', 'B', 'B', 'C', 'C'], [1]]]
         output_processed2 = {'A' : ('initial', 0),
                              'B' : ('initial', 0),
                              'C' : ('initial', 0)}
@@ -191,12 +191,12 @@ class TestCRNparser(unittest.TestCase):
         X + 2Y <=> Z
         """
         output_processed1 = [[['A', 'B'], ['C'], ['77']], [[], ['C'], ['18', '77']], 
-                            [['X', 'Y', 'Y'], ['Z'], [None, None]]]
+                            [['X', 'Y', 'Y'], ['Z'], [1, 1]]]
         o1, o2 = parse_crn_string(input_string)
         self.assertEqual(o1, output_processed1)
 
         input_string = """2Na + Cl2 <=> 2NaCl"""
-        output_processed1 = [[['Na', 'Na', 'Cl2'], ['NaCl', 'NaCl'], [None, None]]]
+        output_processed1 = [[['Na', 'Na', 'Cl2'], ['NaCl', 'NaCl'], [1, 1]]]
         output_processed2 = {'Na' : ('initial', 0),
                              'Cl2' : ('initial', 0),
                              'NaCl' : ('initial', 0)}
@@ -205,7 +205,7 @@ class TestCRNparser(unittest.TestCase):
         self.assertEqual(o2, output_processed2)
 
         input_string = """N2 + 3H2 <=> 2NH3"""
-        output_processed1 = [[['N2', 'H2', 'H2', 'H2'], ['NH3', 'NH3'], [None, None]]]
+        output_processed1 = [[['N2', 'H2', 'H2', 'H2'], ['NH3', 'NH3'], [1, 1]]]
         output_processed2 = {'N2' : ('initial', 0),
                              'H2' : ('initial', 0),
                              'NH3' : ('initial', 0)}

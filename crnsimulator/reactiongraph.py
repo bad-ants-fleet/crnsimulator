@@ -1,11 +1,11 @@
-#
-# CRN-to-MultiDiGraph-to-ODE translation utilities.
-#
-# Written by Stefan Badelt (badelt@caltech.edu).
-#
-# Use at your own risk.
-#
-#
+"""
+Translate a formal CRN into an ODE system.
+
+Test using tests/test_reactiongraph.py.
+"""
+
+import logging
+logger = logging.getLogger(__name__)
 
 import networkx as nx
 from typing import Dict, List, Tuple, Sequence, TypeVar, Union
@@ -21,9 +21,7 @@ sM = TypeVar('sympy.Matrix')
 
 
 class CRNSimulatorError(Exception):
-    def __init__(self, message):
-        super(CRNSimulatorError, self).__init__(message)
-
+    pass
 
 class ReactionNode(object):
     """A Reaction-Node in the ReactionGraph class. """
@@ -108,6 +106,7 @@ class ReactionGraph(object):
         M = Matrix(M)
 
         if jacobian:
+            logger.debug('Calculate Jacobi matrix.')
             # NOTE: The sympy version breaks regularly:
             # J = M.jacobian(sorted_vars)
             # ... so it is done per pedes:
@@ -174,7 +173,7 @@ class ReactionGraph(object):
             # sometimes the format is [[react],[prod], [k]],
             # sometimes it is [[react],[prod], k]
             #
-            # print(DeprecationWarning('Using deprecated format for irreversible reactions.'))
+            # logger.warning('Using deprecated format for irreversible reactions.')
             rxn[2] = rxn[2][0]
 
         self._RG.add_node(n, rate = rxn[2])
