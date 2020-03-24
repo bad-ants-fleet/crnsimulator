@@ -38,7 +38,7 @@ def get_integrator(filename, function = 'integrate'):
 
     return getattr(mod, function)
 
-def writeODElib(svars, odeM, jacobian = None, rdict = None, concvect = None,
+def writeODElib(svars, odeM, const = None, jacobian = None, rdict = None, concvect = None,
                 odename = 'odesystem', filename = './odesystem', template = None):
     """ Write an ODE system into an executable python script.
 
@@ -145,6 +145,9 @@ def writeODElib(svars, odeM, jacobian = None, rdict = None, concvect = None,
             if c:
                 concstring += "p0[{}] = {}\n    ".format(e, c)
     odetemp = odetemp.replace("#<&>DEFAULTCONCENTRATIONS<&>#", concstring)
+
+    if const:
+        odetemp = odetemp.replace("#<&>CONSTANT_SPECIES_INFO<&>#", f"const = {const}\n")
 
     if filename[-3:] != '.py':
         filename += '.py'

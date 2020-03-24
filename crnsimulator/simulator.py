@@ -6,8 +6,6 @@ Usage:
     simulator.py --help
 """
 import logging
-logger = logging.getLogger(__name__)
-
 import re
 import os
 import sys
@@ -63,6 +61,7 @@ def main():
     # ~~~~~~~~~~~~~
     # Logging Setup 
     # ~~~~~~~~~~~~~
+    logger = logging.getLogger('crnsimulator')
     logger.setLevel(logging.DEBUG)
     handler = logging.FileHandler(args.logfile) if args.logfile else logging.StreamHandler()
     if args.verbose == 0:
@@ -107,24 +106,22 @@ def main():
     seen = set() # keep track of what species are covered
 
     # Move interesting species to the front, in the given order.
+    const = []
     labels = args.labels
     for s in labels:
         if s in seen :
             raise SimulationSetupError(f'Multiple occurances of {s} in labels.')
         V.append(s)
-
-        if species[s][0][0] != 'i': 
-            raise NotImplementedError('Concentrations must be given as "initial" concentrations.')
         C.append(species[s][1])
+        const.append(False if species[s][0][0] == 'i' else True)
         seen.add(s)
 
     # Append the remaining specified species 
     for s in natural_sort(species):
         if s in seen : continue
         V.append(s)
-        if species[s][0][0] != 'i':
-            raise NotImplementedError('Concentrations must be given as "initial" concentrations.')
         C.append(species[s][1])
+        const.append(False if species[s][0][0] == 'i' else True)
         seen.add(s)
 
     # Split CRN into irreversible reactions
@@ -160,6 +157,7 @@ def main():
         # PRINT ODE TO TEMPLATE #
         # ..................... #
         filename, odename = RG.write_ODE_lib(sorted_vars = V, concvect = C,
+                                             const = const if any(const) else None,
                                              jacobian = args.jacobian, 
                                              filename = filename,
                                              odename = odename)

@@ -129,9 +129,9 @@ def add_integrator_args(parser):
     # required: simulation time and output settings
     solver.add_argument("--t0", type=float, default=0, metavar='<flt>',
             help="First time point of the time-course.")
-    solver.add_argument("--t8", type=float, default=100000, metavar='<flt>',
+    solver.add_argument("--t8", type=float, default=100, metavar='<flt>',
             help="End point of simulation time.")
-    plotter.add_argument("--t-lin", type=int, default=50000, metavar='<int>',
+    plotter.add_argument("--t-lin", type=int, default=500, metavar='<int>',
             help="Returns --t-lin evenly spaced numbers on a linear scale from --t0 to --t8.")
     plotter.add_argument("--t-log", type=int, default=None, metavar='<int>',
             help="Returns --t-log evenly spaced numbers on a logarithmic scale from --t0 to --t8.")
@@ -221,7 +221,8 @@ def integrate(args, setlogger = False):
 
     p0 = [0] * len(svars)
     #<&>DEFAULTCONCENTRATIONS<&>#
-
+    const = None
+    #<&>CONSTANT_SPECIES_INFO<&>#
     if args.p0:
         for term in args.p0:
             p, o = term.split('=')
@@ -245,7 +246,7 @@ def integrate(args, setlogger = False):
         for e, v in enumerate(svars, 1):
             if args.labels_strict and e > len(args.labels):
                 break
-            print(f'{e} {v} {p0[e-1]}')
+            print(f'{e} {v} {p0[e-1]} {"constant" if const and const[e-1] else ""}')
         raise SystemExit('Initial concentrations can be overwritten by --p0 argument')
 
     if not args.nxy and not args.pyplot:

@@ -58,6 +58,7 @@ class ReactionGraph(object):
     def write_ODE_lib(self, 
             sorted_vars: List[str] = None, 
             concvect: List[float] = None, 
+            const: List[bool] = None,
             jacobian: bool = False, 
             rate_dict: bool = False,
             odename: str = 'odesystem', 
@@ -71,14 +72,16 @@ class ReactionGraph(object):
             raise CRNSimulatorError('Concentrations cannot be mapped to species!')
 
         V, M, J, R = self.ode_system(sorted_vars = sorted_vars, 
+                                     const = const,
                                      jacobian = jacobian, 
                                      rate_dict = rate_dict)
 
-        return writeODElib(V, M, jacobian = J, rdict = R, concvect = concvect,
+        return writeODElib(V, M, const = const, jacobian = J, rdict = R, concvect = concvect,
                            odename = odename, filename = filename, template = None)
 
     def ode_system(self, 
             sorted_vars: List[str] = None, 
+            const: List[bool] = None,
             jacobian: bool = False, 
             rate_dict: bool = False) -> Tuple[List[str], 
                                               sM, 
@@ -98,9 +101,12 @@ class ReactionGraph(object):
         ns = dict(zip(map(str, sorted_vars), sorted_vars))
 
         M = []
-        for dx in sorted_vars:
-            sfunc = sympify(
-                ' + '.join(['*'.join(map(str, xp)) for xp in odict[dx]]), locals=ns)
+        for e, dx in enumerate(sorted_vars):
+            if const and const[e]:
+                sfunc = sympify('0')
+            else:
+                sfunc = sympify(
+                    ' + '.join(['*'.join(map(str, xp)) for xp in odict[dx]]), locals=ns)
             odict[dx] = sfunc
             M.append(sfunc)
         M = Matrix(M)
