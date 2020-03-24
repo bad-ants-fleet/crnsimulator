@@ -2,7 +2,7 @@
 Simulate formal Chemical Reaction Networks using ODEs (library interface).
 """
 
-__version__ = "v0.7.1"
+__version__ = "v0.8"
 
 import logging
 logging.getLogger(__name__).addHandler(logging.NullHandler())
