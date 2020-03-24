@@ -1,10 +1,9 @@
 # crnsimulator 
 
-[![PyPI version](https://badge.fury.io/py/crnsimulator.svg)](https://badge.fury.io/py/crnsimulator)
 [![GitHub version](https://badge.fury.io/gh/bad-ants-fleet%2Fcrnsimulator.svg)](https://badge.fury.io/gh/bad-ants-fleet%2Fcrnsimulator)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Build Status](https://travis-ci.com/bad-ants-fleet/crnsimulator.svg?branch=development)](https://travis-ci.com/github/bad-ants-fleet/crnsimulator)
-
+[![PyPI version](https://badge.fury.io/py/crnsimulator.svg)](https://badge.fury.io/py/crnsimulator)
+[![PyPI - License](https://img.shields.io/pypi/l/crnsimulator)](https://opensource.org/licenses/MIT)
+[![Build Status](https://travis-ci.com/bad-ants-fleet/crnsimulator.svg?branch=master)](https://travis-ci.com/github/bad-ants-fleet/crnsimulator)
 
 Simulate Chemical Recation Networks (CRNs) using Ordinary Differential Equations (ODEs).
 
