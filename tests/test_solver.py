@@ -9,6 +9,7 @@ from crnsimulator.reactiongraph import ReactionGraph, ReactionNode
 from crnsimulator.crn_parser import parse_crn_string
 from crnsimulator.odelib_template import add_integrator_args
 
+assert False
 
 class testSolver(unittest.TestCase):
     def setUp(self):
