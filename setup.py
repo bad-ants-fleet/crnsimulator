@@ -10,6 +10,7 @@ setup(
     version = "0.8",
     description = 'Simulate CRNs using ODEs.',
     long_description = LONG_DESCRIPTION,
+    long_description_content_type="text/markdown",
     author = 'Stefan Badelt',
     author_email = 'badelt@caltech.edu',
     url = 'https://github.com/bad-ants-fleet/crnsimulator',
