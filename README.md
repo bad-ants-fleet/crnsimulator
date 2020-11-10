@@ -118,16 +118,16 @@ Then go ahead and execute `ozzy.py`:
   
 ## Version
 v0.9 -- code cleanup
-    * removed networkx dependency
-    * moved plotting libraries and functions into a separate file to avoid automatic import.
+  * removed networkx dependency
+  * moved plotting libraries and functions into a separate file to avoid automatic import.
 
 v0.8 -- beta status
-    * now using logging
-    * python >= 3.7 only
-    * improved header documentation
-    * using entry_points for crnsimulator script
-    * set defaultrate = 1 (new postprocessing strandard)
-    * new commandline arguments: labels, labels-strict
-    * support the constant concentration flag
+  * now using logging
+  * python >= 3.7 only
+  * improved header documentation
+  * using entry_points for crnsimulator script
+  * set defaultrate = 1 (new postprocessing strandard)
+  * new commandline arguments: labels, labels-strict
+  * support the constant concentration flag
 
 [oscillator.crn]: <https://github.com/bad-ants-fleet/crnsimulator/blob/master/tests/crns/oscillator.crn>
