@@ -8,11 +8,9 @@ Note: This file was adapted from the python package: `Nuskell`, which is
 Test using tests/test_crn_parser.py.
 """
 
-from pyparsing import (Word, Literal, Group, Suppress, Combine, Optional,
+from pyparsing import (Word, Literal, Group, Suppress, Combine, Optional, ParseException,
                        alphas, nums, alphanums, delimitedList, StringStart, StringEnd, LineEnd,
                        ZeroOrMore, OneOrMore, pythonStyleComment, ParseElementEnhance)
-
-from pyparsing import ParseException
 
 class CRNParseError(Exception):
     pass
@@ -202,4 +200,5 @@ def parse_crn_string(data, process = True, **kwargs):
         return post_process(crn_document.parseString(data).asList(), **kwargs)
     else:
         return crn_document.parseString(data).asList()
+
 

@@ -35,7 +35,6 @@ def get_integrator(filename, function = 'integrate'):
     except FileNotFoundError as err:
         logger.error('Deprecation: Please note that the crnsimulator.solver.get_integrator function interface changed with version >= 0.7.1.')
         raise err
-
     return getattr(mod, function)
 
 def writeODElib(svars, odeM, const = None, jacobian = None, rdict = None, concvect = None,

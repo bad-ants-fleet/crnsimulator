@@ -7,53 +7,112 @@ Test using tests/test_reactiongraph.py.
 import logging
 logger = logging.getLogger(__name__)
 
-import networkx as nx
-from typing import Dict, List, Tuple, Sequence, TypeVar, Union
 from sympy import sympify, Matrix, Symbol
-
+from typing import Dict, List, Tuple, Sequence, TypeVar, Union
 from crnsimulator.solver import writeODElib
 
-# Typehintsh
+# Type hints
 SPE = List[str]
 RXN = Tuple[SPE, SPE, str]
 CRN = List[RXN]
 sM = TypeVar('sympy.Matrix')
 
-
 class CRNSimulatorError(Exception):
     pass
 
 class ReactionNode(object):
-    """A Reaction-Node in the ReactionGraph class. """
+    """ A Reaction-Node in the ReactionGraph class. """
     rid = 0
     def __init__(self, prefix: str = 'RXN:'):
         self.name = prefix + str(ReactionNode.rid)
         ReactionNode.rid += 1
 
 class ReactionGraph(object):
-    """Basic Reaction Graph Object. """
-
+    """ Basic Reaction Graph Object. """
     def __init__(self, crn: CRN = None):
-        self._RG = nx.MultiDiGraph()
-        if crn: self.add_reactions(crn)
+        self._nodes = dict()
+        self._edges = dict()
+
+        self._in_edges = dict()  # list(x.in_edges(node))
+        self._out_edges = dict() # list(x.out_edges(node))
+        if crn: 
+            self.add_reactions(crn)
+
+    def add_reactions(self, crn: CRN) -> None:
+        assert isinstance(crn, list)
+        for rxn in crn:
+            self.add_reaction(rxn)
+
+    def add_reaction(self, rxn: RXN) -> None:
+        def add_node(node, **kwargs):
+            assert node not in self._nodes
+            self._nodes[node] = kwargs
+            self._in_edges[node] = set()
+            self._out_edges[node] = set()
+        def add_edge(n1, n2):
+            if n1 not in self.nodes:
+                add_node(n1)
+            if n2 not in self.nodes:
+                add_node(n2)
+            count = self._edges.get((n1, n2), 0)
+            self._edges[(n1, n2)] = count + 1
+
+            self._out_edges[n1].add(n2)
+            self._in_edges[n2].add(n1)
+        assert len(rxn) == 3
+        n = ReactionNode()
+        if isinstance(rxn[2], list):
+            # TODO: maybe we should enforce a consistent format here.
+            #
+            # sometimes the format is [[react],[prod], [k]],
+            # sometimes it is [[react],[prod], k]
+            #
+            # logger.warning('Using deprecated format for irreversible reactions.')
+            rxn[2] = rxn[2][0]
+
+        add_node(n, rate = rxn[2])
+        for r in rxn[0]:
+            assert isinstance(r, str)
+            add_edge(r, n)
+        for p in rxn[1]:
+            assert isinstance(p, str)
+            add_edge(n, p)
+        return
 
     @property
     def reactions(self):
-        return [n for n in self._RG.nodes() if isinstance(n, ReactionNode)]
+        return [n for n in self.nodes if isinstance(n, ReactionNode)]
 
     @property
     def species(self):
-        return [n for n in self._RG.nodes() if not isinstance(n, ReactionNode)]
+        return [n for n in self.nodes if not isinstance(n, ReactionNode)]
 
     @property
     def reactants(self):
-        return [n for n in self._RG.nodes() if not isinstance(n, ReactionNode)
-                and self._RG.out_edges(n)]
+        return [n for n in self.nodes if not isinstance(n, ReactionNode)
+                and self.successors(n)]
 
     @property
     def products(self):
-        return [n for n in self._RG.nodes() if not isinstance(n, ReactionNode)
-                and self._RG.in_edges(n)]
+        return [n for n in self.nodes if not isinstance(n, ReactionNode)
+                and self.predecessors(n)]
+
+    @property
+    def nodes(self):
+        return self._nodes
+
+    @property
+    def edges(self):
+        return self._edges
+
+    def predecessors(self, node):
+        return self._in_edges[node]
+
+    def successors(self, node):
+        return self._out_edges[node]
+
+    def number_of_edges(self, n1, n2):
+        return self._edges[(n1, n2)]
 
     def write_ODE_lib(self, 
             sorted_vars: List[str] = None, 
@@ -136,18 +195,18 @@ class ReactionGraph(object):
         for rxn in self.reactions:
             if rate_dict:
                 rate = 'k' + str(len(list(rdict.keys())))
-                rdict[rate] = self._RG.nodes[rxn]['rate']
+                rdict[rate] = self.nodes[rxn]['rate']
             else:
-                rate = str(self._RG.nodes[rxn]['rate'])
+                rate = str(self.nodes[rxn]['rate'])
 
             reactants = []
-            for reac in self._RG.predecessors(rxn):
-                for i in range(self._RG.number_of_edges(reac, rxn)):
+            for reac in self.predecessors(rxn):
+                for i in range(self.number_of_edges(reac, rxn)):
                     reactants.append(Symbol(reac))
 
             products = []
-            for prod in self._RG.successors(rxn):
-                for i in range(self._RG.number_of_edges(rxn, prod)):
+            for prod in self.successors(rxn):
+                for i in range(self.number_of_edges(rxn, prod)):
                     products.append(Symbol(prod))
 
             for x in reactants:
@@ -164,30 +223,4 @@ class ReactionGraph(object):
 
         return odes, rdict
 
-    def add_reactions(self, crn: CRN) -> None:
-        assert isinstance(crn, list)
-        for rxn in crn:
-            self.add_reaction(rxn)
 
-    def add_reaction(self, rxn: RXN) -> None:
-        assert len(rxn) == 3
-        n = ReactionNode()
-
-        if isinstance(rxn[2], list):
-            # TODO: for now it is ok, but maybe we should enforce a consistent format here.
-            #
-            # sometimes the format is [[react],[prod], [k]],
-            # sometimes it is [[react],[prod], k]
-            #
-            # logger.warning('Using deprecated format for irreversible reactions.')
-            rxn[2] = rxn[2][0]
-
-        self._RG.add_node(n, rate = rxn[2])
-        for r in rxn[0]:
-            assert isinstance(r, str)
-            self._RG.add_edge(r, n)
-        for p in rxn[1]:
-            assert isinstance(p, str)
-            self._RG.add_edge(n, p)
-
-        return
