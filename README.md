@@ -5,8 +5,8 @@ Simulate Chemical Recation Networks (CRNs) using Ordinary Differential Equations
 [![GitHub release (latest by date including pre-releases)](https://img.shields.io/github/v/release/bad-ants-fleet/crnsimulator?include_prereleases)](https://github.com/bad-ants-fleet/crnsimulator/releases)
 [![PyPI version](https://badge.fury.io/py/crnsimulator.svg)](https://badge.fury.io/py/crnsimulator)
 [![PyPI - License](https://img.shields.io/pypi/l/crnsimulator)](https://opensource.org/licenses/MIT)
-[![Build Status](https://travis-ci.com/bad-ants-fleet/crnsimulator.svg?branch=master)](https://travis-ci.com/github/bad-ants-fleet/crnsimulator)
-[![Codecov branch](https://img.shields.io/codecov/c/github/bad-ants-fleet/crnsimulator/master)](https://codecov.io/gh/bad-ants-fleet/crnsimulator)
+[![Travis (.org)](https://img.shields.io/travis/bad-ants-fleet/crnsimulator)](https://travis-ci.com/github/bad-ants-fleet/crnsimulator)
+[![Codecov](https://img.shields.io/codecov/c/github/bad-ants-fleet/crnsimulator)](https://codecov.io/gh/bad-ants-fleet/crnsimulator)
 
 ## Examples
 ### Using the `crnsimulator` executable:
