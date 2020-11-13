@@ -90,7 +90,7 @@ def add_integrator_args(parser):
     return
 
 def flint(inp):
-    return int(inp) if float(inp) == int(float(inp)) else float(inp)
+    return int(float(inp)) if float(inp) == int(float(inp)) else float(inp)
 
 def set_logger(verbose, logfile):
     # ~~~~~~~~~~~~~
