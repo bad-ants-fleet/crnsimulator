@@ -1,10 +1,9 @@
 
 import matplotlib.pyplot as plt
-import seaborn as sns
-sns.set(style="darkgrid", font_scale=1, rc={"lines.linewidth": 2.0})
+import matplotlib.ticker as ticker
 
-def ode_plotter(name, t, ny, svars, log = False, labels = None,
-        xlim = None, ylim = None, plim = None, labels_strict = False):
+def ode_plotter(name, t, ny, svars, lin_time, log_time, labels = None,
+        plim = None, labels_strict = False):
     """ Plots the ODE trajectories.
 
     Args:
@@ -12,10 +11,9 @@ def ode_plotter(name, t, ny, svars, log = False, labels = None,
       t (list[flt]) : time units plotted on the x-axis.
       ny (list[list[flt]]) : a list of trajectories plotted on the y-axis.
       svars (list[str]): A list of names for every trajectory in ny
-      log (bool,optional): Plot data on a logarithmic time scale
+      lin_time: 
+      log_time: 
       labels (set(),optional): Define species that appear labelled in the plot
-      xlim ((float,float), optional): matplotlib xlim.
-      ylim ((float,float), optional): matplotlib ylim.
       plim (float, optional): Minimal occupancy to plot a trajectory. Defaults to None.
       labels_strict (bool, optional): Only print labels that were specified using labels.
 
@@ -25,60 +23,76 @@ def ode_plotter(name, t, ny, svars, log = False, labels = None,
     Returns:
       [str]: Name of the file containing the plot
     """
-    fig, ax = plt.subplots(1, 1, figsize=(8, 4.5))
+    fig, axs = plt.subplots(1, 2, gridspec_kw={'width_ratios': [1, 10]})
+    fig.set_size_inches(7, 3)
+    plt.subplots_adjust(wspace=0)
 
-    # b : blue.
-    # g : green.
-    # r : red.
-    # c : cyan.
-    # m : magenta.
-    # y : yellow.
-    # k : black.
-    mycolors = ['blue', 
-                'red', 
-                'green', 
-                'orange', 
-                'maroon', 
-                'springgreen', 
-                'cyan', 
-                'magenta', 
-                'yellow']
-    mycolors += list('kkkkkkkkkkk')
+    [ax1, ax2] = axs
+    ax1.set_xscale('linear')
+    ax1.spines['right'].set_visible(False)
+    ax1.set_xlim((0, lin_time))
+    #ax1.set_ylim([-0.02, 1.02])
+    # Tick business
+    ax1.set_xticks([0])
 
+    ax2.set_xscale('log')
+    ax2.spines['left'].set_visible(False)
+    ax2.set_xlim((lin_time, log_time))
+    #ax2.set_ylim([-0.02, 1.02])
+    # Tick business
+    ax2.yaxis.tick_right()
+    ax2.set_yticklabels([])
+
+    # TODO: hmmmm
+    ax2.xaxis.set_major_locator(ticker.LogLocator(base=10.0, numticks=10))
+    #ax2.xaxis.set_minor_locator(ticker.LogLocator(base=10.0, numticks=10))
+    #ax2.xaxis.set_minor_formatter(ticker.FormatStrFormatter("%.2f"))
+
+    # Mark the end of transcription.
+    ax1.axvline(x = lin_time, linewidth = 1, color = 'black', linestyle = '-') 
+    ax2.axvline(x = lin_time, linewidth = 1, color = 'black', linestyle = '-') 
+
+    # Set the grid lines.
+    ax1.grid(axis = 'y', which = 'major', alpha = 0.7,
+             color='gray', linestyle='--', linewidth=0.5)
+    ax2.grid(axis = 'y', which = 'major', alpha = 0.7, 
+             color='gray', linestyle='--', linewidth=0.5)
+    ax1.grid(axis = 'x', which = 'major', alpha = 0.7,
+             color='gray', linestyle='--', linewidth=0.5)
+    ax2.grid(axis = 'x', which = 'major', alpha = 0.7, 
+             color='gray', linestyle='--', linewidth=0.5)
+
+    mycolors = ['blue', 'red', 'green', 'orange', 'maroon', 
+                'springgreen', 'cyan', 'magenta', 'yellow']
+    mycolors += ['k' for _ in range(len(ny))] # rest is black.
+ 
     if labels:
         i = 0
         for e, y in enumerate(ny):
             if svars[e] in labels:
-                ax.plot(t, y, '-', label=svars[e], color=mycolors[i])
-                i = i + 1 if i < len(mycolors) - 1 else 0
+                p, = ax1.plot(t, y, '-', color = mycolors[i], lw=1.5)
+                l, = ax2.plot(t, y, '-', color = mycolors[i], lw=1.5, label = svars[e])
+                i += 1
             elif not labels_strict:
-                ax.plot(t, y, '--', lw=0.1, color='gray', zorder=1)
+                p, = ax1.plot(t, y, '-', color = 'gray', lw=0.1, zorder = 1)
+                l, = ax2.plot(t, y, '-', color = 'gray', lw=0.1, zorder = 1)
     else:
         for e, y in enumerate(ny):
             if plim is None or max(y) > plim:
-                ax.plot(t, y, '-', label=svars[e])
+                p, = ax1.plot(t, y, '-')
+                l, = ax2.plot(t, y, '-', label = svars[e])
             else:
-                ax.plot(t, y, '--', lw=0.1, color='gray', zorder=1)
+                p, = ax1.plot(t, y, '--', lw = 0.1, color='gray', zorder = 1)
+                l, = ax2.plot(t, y, '--', lw = 0.1, color='gray', zorder = 1)
 
-    plt.title(name)
-    if xlim:
-        plt.xlim(xlim)
-    # plt.xticks(np.arange(0, 61, step=20))
+    # Legends and labels.
+    ax1.set_ylabel('occupancy')
+    ax2.set_xlabel('time (seconds)')
+    ax1.xaxis.set_label_coords(0.7, -0.15)
+    ax2.legend()
+    ax2.legend(ncol=1, loc = "center right", frameon = True, facecolor = 'white', framealpha = 0.8)
 
-    if ylim:
-        plt.ylim(ylim)
-    # plt.yticks(np.arange(0, 51, step=10))
-
-    ax.set_xlabel('Time', fontsize=16)
-    ax.set_ylabel('Concentration', fontsize=16)
-    if log:
-        ax.set_xscale('log')
-    else:
-        ax.set_xscale('linear')
-
-    plt.legend(loc='upper right')
-    fig.tight_layout()
-    plt.savefig(name)
-    plt.close()
-    return name
+    # Save a file.
+    plt.savefig(name, bbox_inches = 'tight')
+    return
 

@@ -35,21 +35,29 @@ rates = {
 #<&>JACOBIAN<&>#
 
 
+def get_output_times(t0, t1, t8, t_lin, t_log):
+    """ Povide timepoints on a lin/log scale. """
+    times = np.linspace(t0, t1, t_lin + 1)
+    ntime = np.logspace(np.log10(t1), np.log10(t8), t_log + 1)
+    return np.concatenate([times, ntime[1:]])
+
 def add_integrator_args(parser):
     """ODE integration aruments."""
     solver = parser.add_argument_group('odeint parameters')
     plotter = parser.add_argument_group('plotting parameters')
 
     # required: simulation time and output settings
-    solver.add_argument("--t0", type=float, default=0, metavar='<flt>',
-            help="First time point of the time-course.")
-    solver.add_argument("--t8", type=float, default=100, metavar='<flt>',
-            help="End point of simulation time.")
-    plotter.add_argument("--t-lin", type=int, default=500, metavar='<int>',
-            help="Returns --t-lin evenly spaced numbers on a linear scale from --t0 to --t8.")
-    plotter.add_argument("--t-log", type=int, default=None, metavar='<int>',
-            help="Returns --t-log evenly spaced numbers on a logarithmic scale from --t0 to --t8.")
-
+    solver.add_argument("--t0", type = float, default = 0, metavar = '<flt>',
+            help="Linear time scale simulation start.")
+    solver.add_argument("--t1", type = float, default = 0.1, metavar = '<flt>',
+            help="Switch from linear to logarithmic time scale.")
+    solver.add_argument("--t8", type = float, default = 1e5, metavar = '<flt>',
+            help="Logarithmic time scale simulation end.")
+    plotter.add_argument("--t-lin", type = int, default = 10, metavar = '<int>',
+            help = """Evenly space output *t-lin* times [t0, t1] at start of simulation.""")
+    plotter.add_argument("--t-log", type = int, default = 100, metavar = '<int>',
+            help = """Evenly space output *t-log* times (t1, t8] at end of simulation.""")
+ 
     # required: initial concentration vector
     solver.add_argument("--p0", nargs='+', metavar='<int/str>=<flt>',
             help="""Vector of initial species concentrations. 
@@ -166,17 +174,10 @@ def integrate(args, setlogger = False):
     if not args.nxy and not args.pyplot:
         logger.warning('Use --pyplot and/or --nxy to plot your results.')
 
-    if not args.t8:
-        raise ODETemplateError('Specify a valid end-time for the simulation: --t8 <flt>')
-
-    if args.t_log:
-        if args.t0 == 0:
-            raise ODETemplateError('--t0 cannot be 0 when using log-scale!')
-        time = np.logspace(np.log10(args.t0), np.log10(args.t8), num=args.t_log)
-    elif args.t_lin:
-        time = np.linspace(args.t0, args.t8, num=args.t_lin)
-    else:
-        raise ODETemplateError('Please specify either --t-lin or --t-log. (see --help)')
+    #
+    # Prepare the output times.
+    #
+    time = get_output_times(args.t0, args.t1, args.t8, args.t_lin, args.t_log)
 
     # It would be nice if it is possible to read alternative rates from a file instead.
     # None triggers the default-rates that are hard-coded in the (this) library file.
@@ -205,13 +206,10 @@ def integrate(args, setlogger = False):
     if args.pyplot:
         from crnsimulator.plotting import ode_plotter
         plotfile = ode_plotter(args.pyplot, time, ny, svars,
-                               log=True if args.t_log else False,
+                               args.t1, args.t8,
                                labels=set(args.labels),
-                               xlim = args.pyplot_xlim,
-                               ylim = args.pyplot_ylim,
                                labels_strict = args.labels_strict)
         logger.info(f"Plotting successfull. Wrote plot to file: {plotfile}")
-
     return zip(time, *ny)
 
 if __name__ == '__main__':
